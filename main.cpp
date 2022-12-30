@@ -6,6 +6,7 @@
 
 void setup()
 {
+    // Serial.begin(115200);
     mqtt_setup();
     led_setup();
     display_setup();

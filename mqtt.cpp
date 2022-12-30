@@ -72,7 +72,6 @@ static void mqttconnect()
 
 void mqtt_setup()
 {
-    Serial.begin(115200);
     // We start by connecting to a WiFi network
     Serial.println();
     Serial.print("Connecting to ");

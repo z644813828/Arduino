@@ -69,17 +69,10 @@ static void led_error()
     if (millis() > next_blink_time) {
         CRGB::Color c = strip[0] == CRGB::Off ? color : CRGB::Off;
 
-        printf("%s:%d \n", __func__, __LINE__); // DBGPRINT
         for (int i = 0; i < LED_NUM; i++)
             strip[i] = c;
         next_blink_time += 500;
     }
-}
-
-static void mqtt_handle()
-{
-    // FastLED.setBrightness(mqtt.brightness);
-    color = CRGB::Color(color);
 }
 
 void led_setup()
@@ -92,9 +85,6 @@ void led_setup()
 
 void led_loop()
 {
-
-    mqtt_handle();
-
     if (error_code != 0)
         led_error();
     else
