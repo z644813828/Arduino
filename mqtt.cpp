@@ -1,13 +1,13 @@
 // https://voltiq.ru/how-to-use-mqtt-for-smart-home-arduino-esp32/
 // https://habr.com/ru/post/680902/
 
-// monit summary | grep "failed" | awk '{ print $1 }
+#include <Arduino.h>
+#include <PubSubClient.h>
+#include <WiFi.h>
 
-#include "display.hpp"
-#include "led.hpp"
-#include "mqtt.hpp"
-
-#ifdef ARDUINO
+#include "display.h"
+#include "led.h"
+#include "mqtt.h"
 
 const char *ssid = "dd-wrt";
 const char *password = "0000000000";
@@ -18,10 +18,10 @@ static WiFiClient espClient;
 static PubSubClient client(espClient);
 
 /* topics */
-#define LED_BRIGHT_TOPIC "SERVER/led/bright"
-#define LED_COLOR_TOPIC "SERVER/led/color"
-#define LED_MONIT_CODE_TOPIC "SERVER/monit/code"
-#define LED_MONIT_TEXT_TOPIC "SERVER/monit/text"
+#define MQTT_LED_ENABLED_TOPIC "led/enabled"
+#define MQTT_LED_BRIGHT_TOPIC "led/bright"
+#define MQTT_LED_COLOR_TOPIC "led/color"
+#define MQTT_MONIT_TEXT_TOPIC "monit/text"
 
 #define PORT 1883
 
@@ -34,75 +34,72 @@ static void callback(char *topic, byte *payload, unsigned int length)
     String strPayload = String((char *)payload);
     Serial.println(strPayload);
 
-    if (strTopic == LED_BRIGHT_TOPIC) {
+    if (strTopic == MQTT_LED_BRIGHT_TOPIC) {
         led_set_brightness(strPayload.toInt());
-    } else if (strTopic == LED_COLOR_TOPIC) {
+    } else if (strTopic == MQTT_LED_COLOR_TOPIC) {
         led_set_color(strPayload);
-    } else if (strTopic == LED_MONIT_CODE_TOPIC) {
-        led_set_error_code(strPayload.toInt());
-    } else if (strTopic == LED_MONIT_TEXT_TOPIC) {
-        display_set_text(strPayload);
+    } else if (strTopic == MQTT_MONIT_TEXT_TOPIC) {
+        display_monit_text(strPayload);
+        led_set_error_code(strPayload.isEmpty());
+    } else if (strTopic == MQTT_LED_ENABLED_TOPIC) {
+        led_set_enabled(strPayload.toInt());
     }
 }
 
-static void mqttconnect()
+static bool mqttconnect()
 {
-    /* Loop until reconnected */
-    while (!client.connected()) {
-        Serial.print("MQTT connecting ...");
-        /* client ID */
-        String clientId = "ESP32Client";
-        /* connect now */
-        if (client.connect(clientId.c_str())) {
-            Serial.println("connected");
-            /* subscribe topic with default QoS 0*/
-            client.subscribe(LED_BRIGHT_TOPIC);
-            client.subscribe(LED_COLOR_TOPIC);
-            client.subscribe(LED_MONIT_CODE_TOPIC);
-            client.subscribe(LED_MONIT_TEXT_TOPIC);
-        } else {
-            Serial.print("failed, status code =");
-            Serial.print(client.state());
-            Serial.println("try again in 5 seconds");
-            /* Wait 5 seconds before retrying */
-            delay(5000);
-        }
+    if (client.connected()) {
+        display_mqtt_connected(true);
+        return true;
     }
+
+    display_mqtt_connected(false);
+
+    String clientId = "ESP32Client";
+
+    if (client.connect(clientId.c_str())) {
+        Serial.println("MQTT connected");
+        client.subscribe(MQTT_LED_BRIGHT_TOPIC);
+        client.subscribe(MQTT_LED_COLOR_TOPIC);
+        client.subscribe(MQTT_LED_ENABLED_TOPIC);
+        client.subscribe(MQTT_MONIT_TEXT_TOPIC);
+    } else {
+        Serial.print("MQTT connection failed, status code =");
+        Serial.println(client.state());
+    }
+    return false;
+}
+
+static bool wifi_connected()
+{
+    if (WiFi.status() == WL_CONNECTED) {
+        display_wifi_connected(true);
+        Serial.println("WiFi connected");
+        Serial.println("IP address: ");
+        Serial.println(WiFi.localIP());
+
+        client.setServer(mqtt_server, PORT);
+        client.setCallback(callback);
+        return true;
+    }
+
+    display_wifi_connected(false);
 }
 
 void mqtt_setup()
 {
-    // We start by connecting to a WiFi network
     Serial.println();
     Serial.print("Connecting to ");
     Serial.println(ssid);
 
     WiFi.begin(ssid, password);
-
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
-    }
-
-    Serial.println("");
-    Serial.println("WiFi connected");
-    Serial.println("IP address: ");
-    Serial.println(WiFi.localIP());
-
-    /* configure the MQTT server with IPaddress and port */
-    client.setServer(mqtt_server, PORT);
-    client.setCallback(callback);
 }
 
 void mqtt_loop()
 {
-    /* if client was disconnected then try to reconnect again */
-    if (!client.connected()) {
-        mqttconnect();
-    }
-}
-#else
-void mqtt_loop() {}
-void mqtt_setup() {}
+    if (!wifi_connected())
+        return;
 
-#endif
+    if (!mqttconnect())
+        return;
+}
