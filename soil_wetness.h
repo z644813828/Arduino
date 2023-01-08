@@ -1,7 +1,17 @@
 #ifndef SOIL_WETNESS_H
 #define SOIL_WETNESS_H
 
-void soil_wetness_setup();
-void soil_wetness_loop();
+class SoilWetness {
+  public:
+    static SoilWetness &Instance();
+
+    SoilWetness() {}
+
+    SoilWetness(SoilWetness const &) = delete;
+    void operator=(SoilWetness const &) = delete;
+
+    void setup() {}
+    void loop();
+};
 
 #endif

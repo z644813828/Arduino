@@ -2,19 +2,50 @@
 #define LED_H
 
 #include <Arduino.h>
+#include <FastLED.h>
+#include <map>
 
-void led_setup();
-void led_loop();
+#define LED_PIN D3
+#define LED_NUM 80
 
-void led_set_brightness(int b);
+class Led {
+  public:
+    static Led &Instance();
 
-void led_set_color(String color);
-String led_get_color();
+    Led() {}
 
-void led_set_error_code(int code);
+    Led(Led const &) = delete;
+    void operator=(Led const &) = delete;
 
-void led_set_enabled(bool enabled);
+    void setup();
+    void loop();
 
-String led_get_html_colors();
+    void setBrightness(int b);
+
+    void setColor(String color);
+    String getColor();
+
+    void setErrorCode(int code);
+
+    void setEnabled(bool enabled);
+
+    String getHtmlColors();
+
+  private:
+    void starry_night();
+    void led_error();
+    void fill_color_map();
+
+    CRGB m_strip[LED_NUM];
+    long int m_next_blink_time;
+
+    int m_error_code = 0;
+    int m_brightness = 255;
+    bool m_enabled = true;
+
+    CRGB m_color = CRGB::Red;
+    String m_color_str = "Red";
+    std::map<String, CRGB> m_color_map;
+};
 
 #endif

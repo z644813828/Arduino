@@ -3,14 +3,18 @@
 #include <Arduino.h>
 
 #include "display.h"
+#include "soil_wetness.h"
 
 #define DRY_SIGNAL 230
 
-void soil_wetness_setup() {}
-
-static bool g_status = false;
-
-void soil_wetness_loop()
+SoilWetness &SoilWetness::Instance()
 {
-    display_soil_wetness(analogRead(0) < DRY_SIGNAL);
+    static SoilWetness instance;
+    return instance;
+}
+
+void SoilWetness::loop()
+{
+    // Display::Instance().setSoilWetness(analogRead(0) < DRY_SIGNAL);
+    Display::Instance().setSoilWetness(true);
 }

@@ -1,13 +1,56 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
-void display_setup();
-void display_loop();
+#include <Arduino.h>
+#include <SSD1306.h>
 
-void display_monit_text(String text);
-void display_mqtt_connected(bool b);
-void display_wifi_connected(bool b);
-void display_soil_wetness(bool b);
+#define WIDTH 128
+#define HEIGHT 64
+#define PAGES 8
+
+struct Status {
+    bool shown;
+    String text;
+    bool status;
+
+    uint8_t x;
+    uint8_t y;
+    const uint8_t *img;
+    uint8_t width;
+    uint8_t height;
+};
+
+class Display {
+  public:
+    static Display &Instance();
+
+    Display();
+
+    Display(Display const &) = delete;
+    void operator=(Display const &) = delete;
+
+    void setup() {}
+    void loop();
+
+    void setMonitText(String text);
+    void setMqttConnected(bool b);
+    void setWifiConnected(bool b);
+    void setSoilWetness(bool b);
+
+  private:
+    void render(Status *s);
+
+    SSD1306 m_display;
+    Status m_monit;
+    Status m_wifi;
+    Status m_mqtt;
+    Status m_soil_wetness;
+    Status m_power;
+    Status m_logo34;
+    Status m_logo68;
+
+    long int m_next_update_time;
+};
 
 // 'rog', 68x34px
 // clang-format off
