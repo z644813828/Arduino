@@ -13,8 +13,7 @@
 #define HEIGHT 64
 #define PAGES 8
 
-static SSD1306 display(0x3C, D2, D5); // Address set here 0x3C that I found in the scanner, and pins defined as D2
-                                      // (SDA/Serial Data), and D5 (SCK/Serial Clock).
+static SSD1306 display(0x3C, D2, D5);
 
 struct Status {
     bool shown;
@@ -112,7 +111,7 @@ static void display_status(Status *s)
         display.drawFastImage(logo->x, logo->y, logo->width, logo->height, s->img);
 
         if (!s->text.isEmpty())
-            display.drawString(WIDTH / 2, HEIGHT - 3, _monit.text);
+            display.drawString(WIDTH / 2, HEIGHT - 3, s->text);
 
         if (s->shown)
             display.drawFastImage(s->x, s->y, s->width, s->height, s->img);

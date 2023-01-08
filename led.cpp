@@ -7,8 +7,8 @@
 
 #include <FastLED.h>
 
-#define LED_PIN 5
-#define LED_NUM 120
+#define LED_PIN D3
+#define LED_NUM 80
 
 static CRGB strip[LED_NUM];
 static long int next_blink_time;
@@ -19,42 +19,46 @@ static bool enabled = true;
 
 static CRGB color = CRGB::Red;
 
-static bool starry_night()
+static void starry_night()
 {
     for (int i = 0; i < LED_NUM; ++i)
         strip[i] = color;
 
-    static long int unset_time;
+    static long int unset_time = 0;
 
     if (unset_time) {
         unset_time = 0;
-        return true;
+        FastLED.show();
+        return;
     }
 
     if (millis() < next_blink_time)
-        return false;
+        return;
 
     unset_time = millis() + 50;
 
-    for (int i = 0; i < 10; ++i)
+    for (int i = 0; i < LED_NUM / 10; ++i)
         strip[rand() % LED_NUM] = CRGB::White;
 
     next_blink_time += rand() % 10000;
 
-    return true;
+    int step = 100;
+    int b = FastLED.getBrightness() - step + rand() % step;
+    FastLED.setBrightness(b);
+    FastLED.show();
+
+    return;
 }
 
-static bool led_error()
+static void led_error()
 {
     if (millis() < next_blink_time)
-        return false;
+        return;
 
     FastLED.setBrightness((FastLED.getBrightness() == brightness) ? 0 : brightness);
     FastLED.show();
 
     next_blink_time += 500;
-
-    return true;
 }
 
 void led_setup()
@@ -70,15 +74,10 @@ void led_loop()
     if (!enabled)
         return;
 
-    if (error_code != 0) {
-        if (!led_error())
-            return;
-    } else {
-        if (!starry_night())
-            return;
-    }
-
-    FastLED.show();
+    if (error_code != 0)
+        led_error();
+    else
+        starry_night();
 }
 
 void led_set_brightness(int b)

@@ -92,6 +92,8 @@ void mqtt_setup()
     Serial.print("Connecting to ");
     Serial.println(ssid);
 
+    // Connect WiFi
+    WiFi.hostname("Name");
     WiFi.begin(ssid, password);
 }
 
