@@ -5,24 +5,18 @@
 // #define FASTLED_ESP8266_NODEMCU_PIN_ORDER
 // #define FASTLED_ESP8266_D1_PIN_ORDER
 
-#include <FastLED.h>
+#include "led.h"
 
-#define LED_PIN D3
-#define LED_NUM 80
+Led &Led::Instance()
+{
+    static Led instance;
+    return instance;
+}
 
-static CRGB strip[LED_NUM];
-static long int next_blink_time;
-
-static int error_code = 0;
-static int brightness = 255;
-static bool enabled = true;
-
-static CRGB color = CRGB::Red;
-
-static void starry_night()
+void Led::starry_night()
 {
     for (int i = 0; i < LED_NUM; ++i)
-        strip[i] = color;
+        m_strip[i] = m_color;
 
     static long int unset_time = 0;
 
@@ -32,15 +26,15 @@ static void starry_night()
         return;
     }
 
-    if (millis() < next_blink_time)
+    if (millis() < m_next_blink_time)
         return;
 
     unset_time = millis() + 50;
 
     for (int i = 0; i < LED_NUM / 10; ++i)
-        strip[rand() % LED_NUM] = CRGB::White;
+        m_strip[rand() % LED_NUM] = CRGB::White;
 
-    next_blink_time += rand() % 10000;
+    m_next_blink_time += rand() % 10000;
 
     int step = 100;
     int b = FastLED.getBrightness() - step + rand() % step;
@@ -50,204 +44,235 @@ static void starry_night()
     return;
 }
 
-static void led_error()
+void Led::led_error()
 {
-    if (millis() < next_blink_time)
+    if (millis() < m_next_blink_time)
         return;
 
-    FastLED.setBrightness((FastLED.getBrightness() == brightness) ? 0 : brightness);
+    FastLED.setBrightness((FastLED.getBrightness() == m_brightness) ? 0 : m_brightness);
     FastLED.show();
 
-    next_blink_time += 500;
+    m_next_blink_time += 500;
 }
 
-void led_setup()
+void Led::fill_color_map()
 {
-    color = CRGB::Red;
-    next_blink_time = millis();
-    FastLED.addLeds<WS2812, LED_PIN, GRB>(strip, LED_NUM);
+    m_color_map.insert(std::pair<String, CRGB>("Amethyst", CRGB::Amethyst));
+    m_color_map.insert(std::pair<String, CRGB>("AntiqueWhite", CRGB::AntiqueWhite));
+    m_color_map.insert(std::pair<String, CRGB>("Aqua", CRGB::Aqua));
+    m_color_map.insert(std::pair<String, CRGB>("Aquamarine", CRGB::Aquamarine));
+    m_color_map.insert(std::pair<String, CRGB>("Azure", CRGB::Azure));
+    m_color_map.insert(std::pair<String, CRGB>("Beige", CRGB::Beige));
+    m_color_map.insert(std::pair<String, CRGB>("Bisque", CRGB::Bisque));
+    m_color_map.insert(std::pair<String, CRGB>("Black", CRGB::Black));
+    m_color_map.insert(std::pair<String, CRGB>("BlanchedAlmond", CRGB::BlanchedAlmond));
+    m_color_map.insert(std::pair<String, CRGB>("Blue", CRGB::Blue));
+    m_color_map.insert(std::pair<String, CRGB>("BlueViolet", CRGB::BlueViolet));
+    m_color_map.insert(std::pair<String, CRGB>("Brown", CRGB::Brown));
+    m_color_map.insert(std::pair<String, CRGB>("BurlyWood", CRGB::BurlyWood));
+    m_color_map.insert(std::pair<String, CRGB>("CadetBlue", CRGB::CadetBlue));
+    m_color_map.insert(std::pair<String, CRGB>("Chartreuse", CRGB::Chartreuse));
+    m_color_map.insert(std::pair<String, CRGB>("Chocolate", CRGB::Chocolate));
+    m_color_map.insert(std::pair<String, CRGB>("Coral", CRGB::Coral));
+    m_color_map.insert(std::pair<String, CRGB>("CornflowerBlue", CRGB::CornflowerBlue));
+    m_color_map.insert(std::pair<String, CRGB>("Cornsilk", CRGB::Cornsilk));
+    m_color_map.insert(std::pair<String, CRGB>("Crimson", CRGB::Crimson));
+    m_color_map.insert(std::pair<String, CRGB>("Cyan", CRGB::Cyan));
+    m_color_map.insert(std::pair<String, CRGB>("DarkBlue", CRGB::DarkBlue));
+    m_color_map.insert(std::pair<String, CRGB>("DarkCyan", CRGB::DarkCyan));
+    m_color_map.insert(std::pair<String, CRGB>("DarkGoldenrod", CRGB::DarkGoldenrod));
+    m_color_map.insert(std::pair<String, CRGB>("DarkGray", CRGB::DarkGray));
+    m_color_map.insert(std::pair<String, CRGB>("DarkGrey", CRGB::DarkGrey));
+    m_color_map.insert(std::pair<String, CRGB>("DarkGreen", CRGB::DarkGreen));
+    m_color_map.insert(std::pair<String, CRGB>("DarkKhaki", CRGB::DarkKhaki));
+    m_color_map.insert(std::pair<String, CRGB>("DarkMagenta", CRGB::DarkMagenta));
+    m_color_map.insert(std::pair<String, CRGB>("DarkOliveGreen", CRGB::DarkOliveGreen));
+    m_color_map.insert(std::pair<String, CRGB>("DarkOrange", CRGB::DarkOrange));
+    m_color_map.insert(std::pair<String, CRGB>("DarkOrchid", CRGB::DarkOrchid));
+    m_color_map.insert(std::pair<String, CRGB>("DarkRed", CRGB::DarkRed));
+    m_color_map.insert(std::pair<String, CRGB>("DarkSalmon", CRGB::DarkSalmon));
+    m_color_map.insert(std::pair<String, CRGB>("DarkSeaGreen", CRGB::DarkSeaGreen));
+    m_color_map.insert(std::pair<String, CRGB>("DarkSlateBlue", CRGB::DarkSlateBlue));
+    m_color_map.insert(std::pair<String, CRGB>("DarkSlateGray", CRGB::DarkSlateGray));
+    m_color_map.insert(std::pair<String, CRGB>("DarkSlateGrey", CRGB::DarkSlateGrey));
+    m_color_map.insert(std::pair<String, CRGB>("DarkTurquoise", CRGB::DarkTurquoise));
+    m_color_map.insert(std::pair<String, CRGB>("DarkViolet", CRGB::DarkViolet));
+    m_color_map.insert(std::pair<String, CRGB>("DeepPink", CRGB::DeepPink));
+    m_color_map.insert(std::pair<String, CRGB>("DeepSkyBlue", CRGB::DeepSkyBlue));
+    m_color_map.insert(std::pair<String, CRGB>("DimGray", CRGB::DimGray));
+    m_color_map.insert(std::pair<String, CRGB>("DimGrey", CRGB::DimGrey));
+    m_color_map.insert(std::pair<String, CRGB>("DodgerBlue", CRGB::DodgerBlue));
+    m_color_map.insert(std::pair<String, CRGB>("FireBrick", CRGB::FireBrick));
+    m_color_map.insert(std::pair<String, CRGB>("FloralWhite", CRGB::FloralWhite));
+    m_color_map.insert(std::pair<String, CRGB>("ForestGreen", CRGB::ForestGreen));
+    m_color_map.insert(std::pair<String, CRGB>("Fuchsia", CRGB::Fuchsia));
+    m_color_map.insert(std::pair<String, CRGB>("Gainsboro", CRGB::Gainsboro));
+    m_color_map.insert(std::pair<String, CRGB>("GhostWhite", CRGB::GhostWhite));
+    m_color_map.insert(std::pair<String, CRGB>("Gold", CRGB::Gold));
+    m_color_map.insert(std::pair<String, CRGB>("Goldenrod", CRGB::Goldenrod));
+    m_color_map.insert(std::pair<String, CRGB>("Gray", CRGB::Gray));
+    m_color_map.insert(std::pair<String, CRGB>("Grey", CRGB::Grey));
+    m_color_map.insert(std::pair<String, CRGB>("Green", CRGB::Green));
+    m_color_map.insert(std::pair<String, CRGB>("GreenYellow", CRGB::GreenYellow));
+    m_color_map.insert(std::pair<String, CRGB>("Honeydew", CRGB::Honeydew));
+    m_color_map.insert(std::pair<String, CRGB>("HotPink", CRGB::HotPink));
+    m_color_map.insert(std::pair<String, CRGB>("IndianRed", CRGB::IndianRed));
+    m_color_map.insert(std::pair<String, CRGB>("Indigo", CRGB::Indigo));
+    m_color_map.insert(std::pair<String, CRGB>("Ivory", CRGB::Ivory));
+    m_color_map.insert(std::pair<String, CRGB>("Khaki", CRGB::Khaki));
+    m_color_map.insert(std::pair<String, CRGB>("Lavender", CRGB::Lavender));
+    m_color_map.insert(std::pair<String, CRGB>("LavenderBlush", CRGB::LavenderBlush));
+    m_color_map.insert(std::pair<String, CRGB>("LawnGreen", CRGB::LawnGreen));
+    m_color_map.insert(std::pair<String, CRGB>("LemonChiffon", CRGB::LemonChiffon));
+    m_color_map.insert(std::pair<String, CRGB>("LightBlue", CRGB::LightBlue));
+    m_color_map.insert(std::pair<String, CRGB>("LightCoral", CRGB::LightCoral));
+    m_color_map.insert(std::pair<String, CRGB>("LightCyan", CRGB::LightCyan));
+    m_color_map.insert(std::pair<String, CRGB>("LightGoldenrodYellow", CRGB::LightGoldenrodYellow));
+    m_color_map.insert(std::pair<String, CRGB>("LightGreen", CRGB::LightGreen));
+    m_color_map.insert(std::pair<String, CRGB>("LightGrey", CRGB::LightGrey));
+    m_color_map.insert(std::pair<String, CRGB>("LightPink", CRGB::LightPink));
+    m_color_map.insert(std::pair<String, CRGB>("LightSalmon", CRGB::LightSalmon));
+    m_color_map.insert(std::pair<String, CRGB>("LightSeaGreen", CRGB::LightSeaGreen));
+    m_color_map.insert(std::pair<String, CRGB>("LightSkyBlue", CRGB::LightSkyBlue));
+    m_color_map.insert(std::pair<String, CRGB>("LightSlateGray", CRGB::LightSlateGray));
+    m_color_map.insert(std::pair<String, CRGB>("LightSlateGrey", CRGB::LightSlateGrey));
+    m_color_map.insert(std::pair<String, CRGB>("LightSteelBlue", CRGB::LightSteelBlue));
+    m_color_map.insert(std::pair<String, CRGB>("LightYellow", CRGB::LightYellow));
+    m_color_map.insert(std::pair<String, CRGB>("Lime", CRGB::Lime));
+    m_color_map.insert(std::pair<String, CRGB>("LimeGreen", CRGB::LimeGreen));
+    m_color_map.insert(std::pair<String, CRGB>("Linen", CRGB::Linen));
+    m_color_map.insert(std::pair<String, CRGB>("Magenta", CRGB::Magenta));
+    m_color_map.insert(std::pair<String, CRGB>("Maroon", CRGB::Maroon));
+    m_color_map.insert(std::pair<String, CRGB>("MediumAquamarine", CRGB::MediumAquamarine));
+    m_color_map.insert(std::pair<String, CRGB>("MediumBlue", CRGB::MediumBlue));
+    m_color_map.insert(std::pair<String, CRGB>("MediumOrchid", CRGB::MediumOrchid));
+    m_color_map.insert(std::pair<String, CRGB>("MediumPurple", CRGB::MediumPurple));
+    m_color_map.insert(std::pair<String, CRGB>("MediumSeaGreen", CRGB::MediumSeaGreen));
+    m_color_map.insert(std::pair<String, CRGB>("MediumSlateBlue", CRGB::MediumSlateBlue));
+    m_color_map.insert(std::pair<String, CRGB>("MediumSpringGreen", CRGB::MediumSpringGreen));
+    m_color_map.insert(std::pair<String, CRGB>("MediumTurquoise", CRGB::MediumTurquoise));
+    m_color_map.insert(std::pair<String, CRGB>("MediumVioletRed", CRGB::MediumVioletRed));
+    m_color_map.insert(std::pair<String, CRGB>("MidnightBlue", CRGB::MidnightBlue));
+    m_color_map.insert(std::pair<String, CRGB>("MintCream", CRGB::MintCream));
+    m_color_map.insert(std::pair<String, CRGB>("MistyRose", CRGB::MistyRose));
+    m_color_map.insert(std::pair<String, CRGB>("Moccasin", CRGB::Moccasin));
+    m_color_map.insert(std::pair<String, CRGB>("NavajoWhite", CRGB::NavajoWhite));
+    m_color_map.insert(std::pair<String, CRGB>("Navy", CRGB::Navy));
+    m_color_map.insert(std::pair<String, CRGB>("OldLace", CRGB::OldLace));
+    m_color_map.insert(std::pair<String, CRGB>("Olive", CRGB::Olive));
+    m_color_map.insert(std::pair<String, CRGB>("OliveDrab", CRGB::OliveDrab));
+    m_color_map.insert(std::pair<String, CRGB>("Orange", CRGB::Orange));
+    m_color_map.insert(std::pair<String, CRGB>("OrangeRed", CRGB::OrangeRed));
+    m_color_map.insert(std::pair<String, CRGB>("Orchid", CRGB::Orchid));
+    m_color_map.insert(std::pair<String, CRGB>("PaleGoldenrod", CRGB::PaleGoldenrod));
+    m_color_map.insert(std::pair<String, CRGB>("PaleGreen", CRGB::PaleGreen));
+    m_color_map.insert(std::pair<String, CRGB>("PaleTurquoise", CRGB::PaleTurquoise));
+    m_color_map.insert(std::pair<String, CRGB>("PaleVioletRed", CRGB::PaleVioletRed));
+    m_color_map.insert(std::pair<String, CRGB>("PapayaWhip", CRGB::PapayaWhip));
+    m_color_map.insert(std::pair<String, CRGB>("PeachPuff", CRGB::PeachPuff));
+    m_color_map.insert(std::pair<String, CRGB>("Peru", CRGB::Peru));
+    m_color_map.insert(std::pair<String, CRGB>("Pink", CRGB::Pink));
+    m_color_map.insert(std::pair<String, CRGB>("Plaid", CRGB::Plaid));
+    m_color_map.insert(std::pair<String, CRGB>("Plum", CRGB::Plum));
+    m_color_map.insert(std::pair<String, CRGB>("PowderBlue", CRGB::PowderBlue));
+    m_color_map.insert(std::pair<String, CRGB>("Purple", CRGB::Purple));
+    m_color_map.insert(std::pair<String, CRGB>("Red", CRGB::Red));
+    m_color_map.insert(std::pair<String, CRGB>("RosyBrown", CRGB::RosyBrown));
+    m_color_map.insert(std::pair<String, CRGB>("RoyalBlue", CRGB::RoyalBlue));
+    m_color_map.insert(std::pair<String, CRGB>("SaddleBrown", CRGB::SaddleBrown));
+    m_color_map.insert(std::pair<String, CRGB>("Salmon", CRGB::Salmon));
+    m_color_map.insert(std::pair<String, CRGB>("SandyBrown", CRGB::SandyBrown));
+    m_color_map.insert(std::pair<String, CRGB>("SeaGreen", CRGB::SeaGreen));
+    m_color_map.insert(std::pair<String, CRGB>("Seashell", CRGB::Seashell));
+    m_color_map.insert(std::pair<String, CRGB>("Sienna", CRGB::Sienna));
+    m_color_map.insert(std::pair<String, CRGB>("Silver", CRGB::Silver));
+    m_color_map.insert(std::pair<String, CRGB>("SkyBlue", CRGB::SkyBlue));
+    m_color_map.insert(std::pair<String, CRGB>("SlateBlue", CRGB::SlateBlue));
+    m_color_map.insert(std::pair<String, CRGB>("SlateGray", CRGB::SlateGray));
+    m_color_map.insert(std::pair<String, CRGB>("SlateGrey", CRGB::SlateGrey));
+    m_color_map.insert(std::pair<String, CRGB>("Snow", CRGB::Snow));
+    m_color_map.insert(std::pair<String, CRGB>("SpringGreen", CRGB::SpringGreen));
+    m_color_map.insert(std::pair<String, CRGB>("SteelBlue", CRGB::SteelBlue));
+    m_color_map.insert(std::pair<String, CRGB>("Tan", CRGB::Tan));
+    m_color_map.insert(std::pair<String, CRGB>("Teal", CRGB::Teal));
+    m_color_map.insert(std::pair<String, CRGB>("Thistle", CRGB::Thistle));
+    m_color_map.insert(std::pair<String, CRGB>("Tomato", CRGB::Tomato));
+    m_color_map.insert(std::pair<String, CRGB>("Turquoise", CRGB::Turquoise));
+    m_color_map.insert(std::pair<String, CRGB>("Violet", CRGB::Violet));
+    m_color_map.insert(std::pair<String, CRGB>("Wheat", CRGB::Wheat));
+    m_color_map.insert(std::pair<String, CRGB>("White", CRGB::White));
+    m_color_map.insert(std::pair<String, CRGB>("WhiteSmoke", CRGB::WhiteSmoke));
+    m_color_map.insert(std::pair<String, CRGB>("Yellow", CRGB::Yellow));
+    m_color_map.insert(std::pair<String, CRGB>("YellowGreen", CRGB::YellowGreen));
+}
+
+void Led::setup()
+{
+    m_color = CRGB::Red;
+    m_next_blink_time = millis();
+    FastLED.addLeds<WS2812, LED_PIN, GRB>(m_strip, LED_NUM);
     FastLED.setBrightness(255);
+    fill_color_map();
 }
 
-void led_loop()
+void Led::loop()
 {
-    if (!enabled)
+    if (!m_enabled)
         return;
 
-    if (error_code != 0)
+    if (m_error_code != 0)
         led_error();
     else
         starry_night();
 }
 
-void led_set_brightness(int b)
+void Led::led_set_brightness(int b)
 {
-    (void)b;
     FastLED.setBrightness(b);
-    brightness = b;
-    FastLED.show();
-}
-void led_set_error_code(int code)
-{
-    error_code = code;
-}
-
-void led_set_enabled(bool e)
-{
-    enabled = e;
-    FastLED.setBrightness(e ? brightness : 0);
+    m_brightness = b;
     FastLED.show();
 }
 
-void led_set_color(String color)
+void Led::led_set_error_code(int code)
 {
-    // clang-format off
-         if (color == "Amethyst") color = CRGB::Amethyst;
-    else if (color == "AntiqueWhite") color = CRGB::AntiqueWhite;
-    else if (color == "Aqua") color = CRGB::Aqua;
-    else if (color == "Aquamarine") color = CRGB::Aquamarine;
-    else if (color == "Azure") color = CRGB::Azure;
-    else if (color == "Beige") color = CRGB::Beige;
-    else if (color == "Bisque") color = CRGB::Bisque;
-    else if (color == "Black") color = CRGB::Black;
-    else if (color == "BlanchedAlmond") color = CRGB::BlanchedAlmond;
-    else if (color == "Blue") color = CRGB::Blue;
-    else if (color == "BlueViolet") color = CRGB::BlueViolet;
-    else if (color == "Brown") color = CRGB::Brown;
-    else if (color == "BurlyWood") color = CRGB::BurlyWood;
-    else if (color == "CadetBlue") color = CRGB::CadetBlue;
-    else if (color == "Chartreuse") color = CRGB::Chartreuse;
-    else if (color == "Chocolate") color = CRGB::Chocolate;
-    else if (color == "Coral") color = CRGB::Coral;
-    else if (color == "CornflowerBlue") color = CRGB::CornflowerBlue;
-    else if (color == "Cornsilk") color = CRGB::Cornsilk;
-    else if (color == "Crimson") color = CRGB::Crimson;
-    else if (color == "Cyan") color = CRGB::Cyan;
-    else if (color == "DarkBlue") color = CRGB::DarkBlue;
-    else if (color == "DarkCyan") color = CRGB::DarkCyan;
-    else if (color == "DarkGoldenrod") color = CRGB::DarkGoldenrod;
-    else if (color == "DarkGray") color = CRGB::DarkGray;
-    else if (color == "DarkGrey") color = CRGB::DarkGrey;
-    else if (color == "DarkGreen") color = CRGB::DarkGreen;
-    else if (color == "DarkKhaki") color = CRGB::DarkKhaki;
-    else if (color == "DarkMagenta") color = CRGB::DarkMagenta;
-    else if (color == "DarkOliveGreen") color = CRGB::DarkOliveGreen;
-    else if (color == "DarkOrange") color = CRGB::DarkOrange;
-    else if (color == "DarkOrchid") color = CRGB::DarkOrchid;
-    else if (color == "DarkRed") color = CRGB::DarkRed;
-    else if (color == "DarkSalmon") color = CRGB::DarkSalmon;
-    else if (color == "DarkSeaGreen") color = CRGB::DarkSeaGreen;
-    else if (color == "DarkSlateBlue") color = CRGB::DarkSlateBlue;
-    else if (color == "DarkSlateGray") color = CRGB::DarkSlateGray;
-    else if (color == "DarkSlateGrey") color = CRGB::DarkSlateGrey;
-    else if (color == "DarkTurquoise") color = CRGB::DarkTurquoise;
-    else if (color == "DarkViolet") color = CRGB::DarkViolet;
-    else if (color == "DeepPink") color = CRGB::DeepPink;
-    else if (color == "DeepSkyBlue") color = CRGB::DeepSkyBlue;
-    else if (color == "DimGray") color = CRGB::DimGray;
-    else if (color == "DimGrey") color = CRGB::DimGrey;
-    else if (color == "DodgerBlue") color = CRGB::DodgerBlue;
-    else if (color == "FireBrick") color = CRGB::FireBrick;
-    else if (color == "FloralWhite") color = CRGB::FloralWhite;
-    else if (color == "ForestGreen") color = CRGB::ForestGreen;
-    else if (color == "Fuchsia") color = CRGB::Fuchsia;
-    else if (color == "Gainsboro") color = CRGB::Gainsboro;
-    else if (color == "GhostWhite") color = CRGB::GhostWhite;
-    else if (color == "Gold") color = CRGB::Gold;
-    else if (color == "Goldenrod") color = CRGB::Goldenrod;
-    else if (color == "Gray") color = CRGB::Gray;
-    else if (color == "Grey") color = CRGB::Grey;
-    else if (color == "Green") color = CRGB::Green;
-    else if (color == "GreenYellow") color = CRGB::GreenYellow;
-    else if (color == "Honeydew") color = CRGB::Honeydew;
-    else if (color == "HotPink") color = CRGB::HotPink;
-    else if (color == "IndianRed") color = CRGB::IndianRed;
-    else if (color == "Indigo") color = CRGB::Indigo;
-    else if (color == "Ivory") color = CRGB::Ivory;
-    else if (color == "Khaki") color = CRGB::Khaki;
-    else if (color == "Lavender") color = CRGB::Lavender;
-    else if (color == "LavenderBlush") color = CRGB::LavenderBlush;
-    else if (color == "LawnGreen") color = CRGB::LawnGreen;
-    else if (color == "LemonChiffon") color = CRGB::LemonChiffon;
-    else if (color == "LightBlue") color = CRGB::LightBlue;
-    else if (color == "LightCoral") color = CRGB::LightCoral;
-    else if (color == "LightCyan") color = CRGB::LightCyan;
-    else if (color == "LightGoldenrodYellow") color = CRGB::LightGoldenrodYellow;
-    else if (color == "LightGreen") color = CRGB::LightGreen;
-    else if (color == "LightGrey") color = CRGB::LightGrey;
-    else if (color == "LightPink") color = CRGB::LightPink;
-    else if (color == "LightSalmon") color = CRGB::LightSalmon;
-    else if (color == "LightSeaGreen") color = CRGB::LightSeaGreen;
-    else if (color == "LightSkyBlue") color = CRGB::LightSkyBlue;
-    else if (color == "LightSlateGray") color = CRGB::LightSlateGray;
-    else if (color == "LightSlateGrey") color = CRGB::LightSlateGrey;
-    else if (color == "LightSteelBlue") color = CRGB::LightSteelBlue;
-    else if (color == "LightYellow") color = CRGB::LightYellow;
-    else if (color == "Lime") color = CRGB::Lime;
-    else if (color == "LimeGreen") color = CRGB::LimeGreen;
-    else if (color == "Linen") color = CRGB::Linen;
-    else if (color == "Magenta") color = CRGB::Magenta;
-    else if (color == "Maroon") color = CRGB::Maroon;
-    else if (color == "MediumAquamarine") color = CRGB::MediumAquamarine;
-    else if (color == "MediumBlue") color = CRGB::MediumBlue;
-    else if (color == "MediumOrchid") color = CRGB::MediumOrchid;
-    else if (color == "MediumPurple") color = CRGB::MediumPurple;
-    else if (color == "MediumSeaGreen") color = CRGB::MediumSeaGreen;
-    else if (color == "MediumSlateBlue") color = CRGB::MediumSlateBlue;
-    else if (color == "MediumSpringGreen") color = CRGB::MediumSpringGreen;
-    else if (color == "MediumTurquoise") color = CRGB::MediumTurquoise;
-    else if (color == "MediumVioletRed") color = CRGB::MediumVioletRed;
-    else if (color == "MidnightBlue") color = CRGB::MidnightBlue;
-    else if (color == "MintCream") color = CRGB::MintCream;
-    else if (color == "MistyRose") color = CRGB::MistyRose;
-    else if (color == "Moccasin") color = CRGB::Moccasin;
-    else if (color == "NavajoWhite") color = CRGB::NavajoWhite;
-    else if (color == "Navy") color = CRGB::Navy;
-    else if (color == "OldLace") color = CRGB::OldLace;
-    else if (color == "Olive") color = CRGB::Olive;
-    else if (color == "OliveDrab") color = CRGB::OliveDrab;
-    else if (color == "Orange") color = CRGB::Orange;
-    else if (color == "OrangeRed") color = CRGB::OrangeRed;
-    else if (color == "Orchid") color = CRGB::Orchid;
-    else if (color == "PaleGoldenrod") color = CRGB::PaleGoldenrod;
-    else if (color == "PaleGreen") color = CRGB::PaleGreen;
-    else if (color == "PaleTurquoise") color = CRGB::PaleTurquoise;
-    else if (color == "PaleVioletRed") color = CRGB::PaleVioletRed;
-    else if (color == "PapayaWhip") color = CRGB::PapayaWhip;
-    else if (color == "PeachPuff") color = CRGB::PeachPuff;
-    else if (color == "Peru") color = CRGB::Peru;
-    else if (color == "Pink") color = CRGB::Pink;
-    else if (color == "Plaid") color = CRGB::Plaid;
-    else if (color == "Plum") color = CRGB::Plum;
-    else if (color == "PowderBlue") color = CRGB::PowderBlue;
-    else if (color == "Purple") color = CRGB::Purple;
-    else if (color == "Red") color = CRGB::Red;
-    else if (color == "RosyBrown") color = CRGB::RosyBrown;
-    else if (color == "RoyalBlue") color = CRGB::RoyalBlue;
-    else if (color == "SaddleBrown") color = CRGB::SaddleBrown;
-    else if (color == "Salmon") color = CRGB::Salmon;
-    else if (color == "SandyBrown") color = CRGB::SandyBrown;
-    else if (color == "SeaGreen") color = CRGB::SeaGreen;
-    else if (color == "Seashell") color = CRGB::Seashell;
-    else if (color == "Sienna") color = CRGB::Sienna;
-    else if (color == "Silver") color = CRGB::Silver;
-    else if (color == "SkyBlue") color = CRGB::SkyBlue;
-    else if (color == "SlateBlue") color = CRGB::SlateBlue;
-    else if (color == "SlateGray") color = CRGB::SlateGray;
-    else if (color == "SlateGrey") color = CRGB::SlateGrey;
-    else if (color == "Snow") color = CRGB::Snow;
-    else if (color == "SpringGreen") color = CRGB::SpringGreen;
-    else if (color == "SteelBlue") color = CRGB::SteelBlue;
-    else if (color == "Tan") color = CRGB::Tan;
-    else if (color == "Teal") color = CRGB::Teal;
-    else if (color == "Thistle") color = CRGB::Thistle;
-    else if (color == "Tomato") color = CRGB::Tomato;
-    else if (color == "Turquoise") color = CRGB::Turquoise;
-    else if (color == "Violet") color = CRGB::Violet;
-    else if (color == "Wheat") color = CRGB::Wheat;
-    else if (color == "White") color = CRGB::White;
-    else if (color == "WhiteSmoke") color = CRGB::WhiteSmoke;
-    else if (color == "Yellow") color = CRGB::Yellow;
-    else if (color == "YellowGreen") color = CRGB::YellowGreen;
-    // clang-format on
+    m_error_code = code;
+}
+
+void Led::led_set_enabled(bool e)
+{
+    m_enabled = e;
+    FastLED.setBrightness(e ? m_brightness : 0);
+    FastLED.show();
+}
+
+void Led::led_set_color(String color_in)
+{
+    m_color_str = color_in;
+    m_color = m_color_map[m_color_str];
+}
+
+String Led::led_get_color()
+{
+    return m_color_str;
+}
+
+String Led::led_get_html_colors()
+{
+    String str;
+
+    std::map<String, CRGB>::iterator it = m_color_map.begin();
+    while (it != m_color_map.end()) {
+        String color = it->first;
+        str += "    <option value=\"";
+        str += color;
+        str += "\"";
+        if (color == m_color_str)
+            str += " selected";
+        str += ">";
+        str += color;
+        str += "</option>\n";
+        it++;
+    }
+
+    return str;
 }
