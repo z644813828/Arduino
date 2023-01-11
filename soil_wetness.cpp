@@ -5,8 +5,6 @@
 #include "display.h"
 #include "soil_wetness.h"
 
-#define DRY_SIGNAL 230
-
 SoilWetness &SoilWetness::Instance()
 {
     static SoilWetness instance;
@@ -15,6 +13,6 @@ SoilWetness &SoilWetness::Instance()
 
 void SoilWetness::loop()
 {
-    // Display::Instance().setSoilWetness(analogRead(0) < DRY_SIGNAL);
+    // Display::Instance().setSoilWetness(analogRead(0) < m_dry_signal);
     Display::Instance().setSoilWetness(true);
 }

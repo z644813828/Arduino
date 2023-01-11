@@ -102,22 +102,22 @@ void Display::setSoilWetness(bool b)
     m_soil_wetness.status = b;
 }
 
-void Display::render(Status *s)
+void Display::render(Status &s)
 {
-    if (s->status) {
-        m_display.drawFastImage(s->x, s->y, s->width, s->height, s->img);
+    if (s.status) {
+        m_display.drawFastImage(s.x, s.y, s.width, s.height, s.img);
     } else {
-        // convert (8*8 || 16*8) -> (34*34 || 68*34)
-        Status *logo = s->width == 8 ? &m_logo34 : &m_logo68;
+        // convert (8*8 || 16*8) . (34*34 || 68*34)
+        Status &logo = s.width == 8 ? m_logo34 : m_logo68;
 
-        m_display.drawFastImage(logo->x, logo->y, logo->width, logo->height, s->img);
+        m_display.drawFastImage(logo.x, logo.y, logo.width, logo.height, s.img);
 
-        if (!s->text.isEmpty())
-            m_display.drawString(WIDTH / 2, HEIGHT - 3, s->text);
+        if (!s.text.isEmpty())
+            m_display.drawString(WIDTH / 2, HEIGHT - 3, s.text);
 
-        if (s->shown)
-            m_display.drawFastImage(s->x, s->y, s->width, s->height, s->img);
-        s->shown = !s->shown;
+        if (s.shown)
+            m_display.drawFastImage(s.x, s.y, s.width, s.height, s.img);
+        s.shown = !s.shown;
     }
 }
 
@@ -134,11 +134,48 @@ void Display::loop()
 
     m_display.clear();
 
-    render(&m_logo68);
-    render(&m_wifi);
-    render(&m_mqtt);
-    render(&m_monit);
-    render(&m_power);
+    render(m_logo68);
+    render(m_wifi);
+    render(m_mqtt);
+    render(m_monit);
+    render(m_power);
 
     m_display.display();
+}
+
+void Display::startSelfTest()
+{
+    Status logo68 = m_logo68;
+    Status wifi = m_wifi;
+    Status mqtt = m_mqtt;
+    Status monit = m_monit;
+    Status power = m_power;
+
+    logo68.status = true;
+    wifi.status = true;
+    mqtt.status = true;
+    monit.status = true;
+    power.status = true;
+
+    render(logo68);
+    render(wifi);
+    render(mqtt);
+    render(monit);
+    render(power);
+    m_display.display();
+    delay(2000);
+
+    logo68.text = __func__;
+
+    auto test = [&](Status &s) {
+        s.status = false;
+        m_display.display();
+        delay(2000);
+    };
+
+    test(logo68);
+    test(wifi);
+    test(mqtt);
+    test(monit);
+    test(power);
 }

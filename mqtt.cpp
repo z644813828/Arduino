@@ -42,7 +42,7 @@ void Mqtt::callback(char *topic, byte *payload, unsigned int length)
         Led::Instance().setColor(str_payload);
     } else if (str_topic == MQTT_MONIT_TEXT_TOPIC) {
         Display::Instance().setMonitText(str_payload);
-        Led::Instance().setErrorCode(str_payload.isEmpty());
+        Led::Instance().setErrorCode(!str_payload.isEmpty());
     } else if (str_topic == MQTT_LED_ENABLED_TOPIC) {
         Led::Instance().setEnabled(str_payload.toInt());
     }
@@ -66,16 +66,14 @@ void Mqtt::loop()
 
     String clientId = "ESP32Client";
 
-    if (m_client.connect(clientId.c_str())) {
-        Serial.println("MQTT connected");
-        m_client.subscribe(MQTT_LED_BRIGHT_TOPIC);
-        m_client.subscribe(MQTT_LED_COLOR_TOPIC);
-        m_client.subscribe(MQTT_LED_ENABLED_TOPIC);
-        m_client.subscribe(MQTT_MONIT_TEXT_TOPIC);
-    } else {
-        Serial.print("MQTT connection failed, status code =");
-        Serial.println(m_client.state());
-    }
+    if (!m_client.connect(clientId.c_str()))
+        return;
+
+    Serial.println("MQTT connected");
+    m_client.subscribe(MQTT_LED_BRIGHT_TOPIC);
+    m_client.subscribe(MQTT_LED_COLOR_TOPIC);
+    // m_client.subscribe(MQTT_LED_ENABLED_TOPIC);
+    m_client.subscribe(MQTT_MONIT_TEXT_TOPIC);
 }
 
 String Mqtt::get(const String &topic)

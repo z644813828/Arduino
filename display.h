@@ -37,8 +37,10 @@ class Display {
     void setWifiConnected(bool b);
     void setSoilWetness(bool b);
 
+    void startSelfTest();
+
   private:
-    void render(Status *s);
+    void render(Status &s);
 
     SSD1306 m_display;
     Status m_monit;
