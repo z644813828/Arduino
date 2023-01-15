@@ -19,11 +19,11 @@ Wifi &Wifi::Instance()
 
 void Wifi::setup()
 {
-    // Serial.println();
-    // for (int i = 0; i < WiFi.scanNetworks(); i++)
-    //     Serial.println(WiFi.SSID(i));
-    //
-    // delay(2000);
+    Serial.println();
+    for (int i = 0; i < WiFi.scanNetworks(); i++)
+        Serial.println(WiFi.SSID(i));
+
+    delay(2000);
 
     Serial.println();
     Serial.print("Connecting to ");
@@ -39,11 +39,42 @@ void Wifi::InitHandler()
         String str = R"(
 <style>
 	body {
+		background-color: black !important;
+	}
+
+	.data {
 		background-image: url('https://phonoteka.org/uploads/posts/2021-05/1621343517_4-phonoteka_org-p-igrovoi-fon-asus-5.jpg') !important;
 		background-repeat: no-repeat;
 		background-attachment: local;
 		background-position: right;
 		background-size: cover;
+		color: white;
+	}
+
+	h1 {
+		color: white;
+	}
+
+	div {
+		color: white;
+	}
+
+
+	.toggle.ios,
+	.toggle-on.ios,
+	.toggle-off.ios {
+		border-radius: 20px;
+	}
+
+	.toggle.ios .toggle-handle {
+		border-radius: 20px;
+	}
+
+	#content {
+		margin: auto;
+		left: 1%;
+		right: 1%;
+		position: absolute;
 	}
 </style>
 <html lang="en">
@@ -51,11 +82,14 @@ void Wifi::InitHandler()
 	<title>Arduino Control Page</title>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 	<script src="https://code.jquery.com/jquery-3.6.3.min.js" integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU=" crossorigin="anonymous"></script>
-    <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
-    <script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap5-toggle@5.0.4/js/bootstrap5-toggle.jquery.min.js"></script>
+
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap5-toggle@5.0.4/css/bootstrap5-toggle.min.css" rel="stylesheet" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
 
 <body>
@@ -104,11 +138,7 @@ void Wifi::InitHandler()
 		<div class="col-12 col-md-3">
 			<div>Effect arguments</div>
             )" + Led::Instance().getHtmlArguments() + R"(
-            <form class="d-flex" action="/get">
-                <button class="btn btn-success" type="submit">Set</button>
-                <input type="checkbox" checked data-toggle="toggle" name="debug_led">
-            </form>
-			<br>
+            <br>
 			<div>Debug LED strip</div>
 			<form class="d-flex" action="/get">
 				<button class="btn btn-success" type="submit">Set</button>

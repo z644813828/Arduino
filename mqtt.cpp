@@ -45,6 +45,7 @@ void Mqtt::callback(char *topic, byte *payload, unsigned int length)
         Led::Instance().setErrorCode(!str_payload.isEmpty());
     } else if (str_topic == MQTT_LED_ENABLED_TOPIC) {
         Led::Instance().setEnabled(str_payload.toInt());
+        Display::Instance().setEnabled(str_payload.toInt());
     }
 }
 
@@ -72,7 +73,7 @@ void Mqtt::loop()
     Serial.println("MQTT connected");
     m_client.subscribe(MQTT_LED_BRIGHT_TOPIC);
     m_client.subscribe(MQTT_LED_COLOR_TOPIC);
-    // m_client.subscribe(MQTT_LED_ENABLED_TOPIC);
+    m_client.subscribe(MQTT_LED_ENABLED_TOPIC);
     m_client.subscribe(MQTT_MONIT_TEXT_TOPIC);
 }
 

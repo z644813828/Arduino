@@ -3,21 +3,17 @@
 // https://blog.hau.me/2018/12/26/i2c-oled-display-on-a-wemos-d1-mini/
 // https://www.instructables.com/Wemos-D1-Mini-096-SSD1306-OLED-Display-Using-SPI/
 
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <Wire.h>
+
 #include "display.h"
 
-#define DISPLAY_DISABLED
+#define OLED_RESET -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+Adafruit_SSD1306 m_display(WIDTH, HEIGHT, &Wire, OLED_RESET);
 
 Display::Display()
-    : m_display(0x3C, D2, D5)
 {
-#ifdef DISPLAY_DISABLED
-    Serial.println("Error: Display::Display() DISABLED !!!");
-    return;
-#endif
-    m_display.init();
-    m_display.setTextAlignment(TEXT_ALIGN_CENTER_BOTH);
-    // display.flipScreenVertically();
-
     m_next_update_time = millis();
 
     memset(&m_monit, 0, sizeof(Status));
@@ -32,24 +28,28 @@ Display::Display()
     m_wifi.x = 0;
     m_wifi.y = 2;
     m_wifi.img = Signal816;
+    m_wifi.img_full = Signal6834;
     m_wifi.width = 16;
     m_wifi.height = 8;
 
-    m_mqtt.x = 24;
+    m_mqtt.x = 32;
     m_mqtt.y = 2;
-    m_mqtt.img = Bluetooth88;
+    m_mqtt.img = Server88;
+    m_mqtt.img_full = Server3434;
     m_mqtt.width = 8;
     m_mqtt.height = 8;
 
-    m_monit.x = 64;
+    m_monit.x = 52;
     m_monit.y = 2;
     m_monit.img = Msg816;
+    m_monit.img_full = Msg6834;
     m_monit.width = 16;
     m_monit.height = 8;
 
     m_soil_wetness.x = 88;
     m_soil_wetness.y = 2;
-    m_soil_wetness.img = epd_bitmap_leeve;
+    m_soil_wetness.img = Leeve88;
+    m_soil_wetness.img_full = Leeve3434;
     m_soil_wetness.width = 8;
     m_soil_wetness.height = 8;
 
@@ -63,14 +63,14 @@ Display::Display()
     // main icon
     m_logo68.status = true;
     m_logo68.x = (WIDTH - 68) / 2;
-    m_logo68.y = (HEIGHT - 8) / 2;
-    m_logo68.img = epd_bitmap_rog;
+    m_logo68.y = 16;
+    m_logo68.img = Rog6834;
     m_logo68.width = 68;
     m_logo68.height = 34;
 
     m_logo34.x = (WIDTH - 34) / 2;
-    m_logo68.y = (HEIGHT - 8) / 2;
-    m_logo34.img = epd_bitmap_rog;
+    m_logo68.y = 16;
+    m_logo34.img = Rog6834;
     m_logo34.width = 34;
     m_logo34.height = 34;
 }
@@ -79,6 +79,20 @@ Display &Display::Instance()
 {
     static Display instance;
     return instance;
+}
+
+void Display::setup()
+{
+    m_display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+
+    m_display.clearDisplay();
+    m_display.setTextSize(1);
+    m_display.setTextColor(WHITE);
+    m_display.setCursor(0, 0);
+    m_display.println(">");
+    delay(500);
+
+    m_display.display();
 }
 
 void Display::setMonitText(String text)
@@ -105,41 +119,51 @@ void Display::setSoilWetness(bool b)
 void Display::render(Status &s)
 {
     if (s.status) {
-        m_display.drawFastImage(s.x, s.y, s.width, s.height, s.img);
+        m_display.drawBitmap(s.x, s.y, s.img, s.width, s.height, WHITE);
     } else {
-        // convert (8*8 || 16*8) . (34*34 || 68*34)
-        Status &logo = s.width == 8 ? m_logo34 : m_logo68;
+        if (!m_logo_printed) {
+            m_logo_printed = true;
+            // convert (8*8 || 16*8) . (34*34 || 68*34)
+            Status &logo = s.width == 8 ? m_logo34 : m_logo68;
+            m_display.drawBitmap(logo.x, logo.y, s.img_full, logo.width, logo.height, WHITE);
+        }
 
-        m_display.drawFastImage(logo.x, logo.y, logo.width, logo.height, s.img);
-
-        if (!s.text.isEmpty())
-            m_display.drawString(WIDTH / 2, HEIGHT - 3, s.text);
+        if (!m_text_printed) {
+            m_text_printed = true;
+            if (!s.text.isEmpty()) {
+                m_display.setTextSize(1);
+                m_display.setTextColor(WHITE);
+                m_display.setCursor(0, HEIGHT - 8);
+                m_display.println(s.text);
+            }
+        }
 
         if (s.shown)
-            m_display.drawFastImage(s.x, s.y, s.width, s.height, s.img);
+            m_display.drawBitmap(s.x, s.y, s.img, s.width, s.height, WHITE);
         s.shown = !s.shown;
     }
 }
 
 void Display::loop()
 {
-#ifdef DISPLAY_DISABLED
-    return;
-#endif
-
     if (millis() < m_next_update_time)
         return;
 
     m_next_update_time += 200;
 
-    m_display.clear();
+    m_display.clearDisplay();
 
-    render(m_logo68);
+    m_logo_printed = false;
+    m_text_printed = false;
     render(m_wifi);
     render(m_mqtt);
     render(m_monit);
+    render(m_soil_wetness);
     render(m_power);
+    if (!m_logo_printed)
+        render(m_logo68);
 
+    m_display.dim(!m_logo68.status);
     m_display.display();
 }
 
@@ -178,4 +202,9 @@ void Display::startSelfTest()
     test(mqtt);
     test(monit);
     test(power);
+}
+
+void Display::setEnabled(bool enabled)
+{
+    m_logo68.status = enabled;
 }

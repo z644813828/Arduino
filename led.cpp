@@ -490,17 +490,34 @@ void Led::BouncingColoredBalls()
     float Gravity = -9.81;
     int StartHeight = 1;
 
-    static float *Height = (float *)malloc(sizeof(float) * BallCount);
     static float ImpactVelocityStart = sqrt(-2 * Gravity * StartHeight);
-    static float *ImpactVelocity = (float *)malloc(sizeof(float) * BallCount);
-    static float *TimeSinceLastBounce = (float *)malloc(sizeof(float) * BallCount);
-    static int *Position = (int *)malloc(sizeof(float) * BallCount);
-    static long *ClockTimeSinceLastBounce = (long *)malloc(sizeof(float) * BallCount);
-    static float *Dampening = (float *)malloc(sizeof(float) * BallCount);
 
-    static bool initialized = false;
+    static float *Height;
+    static float *ImpactVelocity;
+    static float *TimeSinceLastBounce;
+    static int *Position;
+    static long *ClockTimeSinceLastBounce;
+    static float *Dampening;
 
-    if (!initialized) {
+    static int m_BallCount = 0;
+
+    if (m_BallCount != BallCount) {
+        if (m_BallCount) {
+            free(Height);
+            free(ImpactVelocity);
+            free(TimeSinceLastBounce);
+            free(Position);
+            free(ClockTimeSinceLastBounce);
+            free(Dampening);
+        }
+
+        Height = (float *)malloc(sizeof(float) * BallCount);
+        ImpactVelocity = (float *)malloc(sizeof(float) * BallCount);
+        TimeSinceLastBounce = (float *)malloc(sizeof(float) * BallCount);
+        Position = (int *)malloc(sizeof(float) * BallCount);
+        ClockTimeSinceLastBounce = (long *)malloc(sizeof(float) * BallCount);
+        Dampening = (float *)malloc(sizeof(float) * BallCount);
+
         for (int i = 0; i < BallCount; i++) {
             ClockTimeSinceLastBounce[i] = millis();
             Height[i] = StartHeight;
@@ -509,7 +526,7 @@ void Led::BouncingColoredBalls()
             TimeSinceLastBounce[i] = 0;
             Dampening[i] = 0.90 - float(i) / pow(BallCount, 2);
         }
-        initialized = true;
+        m_BallCount = BallCount;
     }
 
     for (int i = 0; i < BallCount; i++) {
@@ -546,17 +563,34 @@ void Led::BouncingBalls()
     float Gravity = -9.81;
     int StartHeight = 1;
 
-    static float *Height = (float *)malloc(sizeof(float) * BallCount);
     static float ImpactVelocityStart = sqrt(-2 * Gravity * StartHeight);
-    static float *ImpactVelocity = (float *)malloc(sizeof(float) * BallCount);
-    static float *TimeSinceLastBounce = (float *)malloc(sizeof(float) * BallCount);
-    static int *Position = (int *)malloc(sizeof(float) * BallCount);
-    static long *ClockTimeSinceLastBounce = (long *)malloc(sizeof(float) * BallCount);
-    static float *Dampening = (float *)malloc(sizeof(float) * BallCount);
 
-    static bool initialized = false;
+    static float *Height;
+    static float *ImpactVelocity;
+    static float *TimeSinceLastBounce;
+    static int *Position;
+    static long *ClockTimeSinceLastBounce;
+    static float *Dampening;
 
-    if (!initialized) {
+    static int m_BallCount = 0;
+
+    if (m_BallCount != BallCount) {
+        if (m_BallCount) {
+            free(Height);
+            free(ImpactVelocity);
+            free(TimeSinceLastBounce);
+            free(Position);
+            free(ClockTimeSinceLastBounce);
+            free(Dampening);
+        }
+
+        Height = (float *)malloc(sizeof(float) * BallCount);
+        ImpactVelocity = (float *)malloc(sizeof(float) * BallCount);
+        TimeSinceLastBounce = (float *)malloc(sizeof(float) * BallCount);
+        Position = (int *)malloc(sizeof(float) * BallCount);
+        ClockTimeSinceLastBounce = (long *)malloc(sizeof(float) * BallCount);
+        Dampening = (float *)malloc(sizeof(float) * BallCount);
+
         for (int i = 0; i < BallCount; i++) {
             ClockTimeSinceLastBounce[i] = millis();
             Height[i] = StartHeight;
@@ -565,7 +599,7 @@ void Led::BouncingBalls()
             TimeSinceLastBounce[i] = 0;
             Dampening[i] = 0.90 - float(i) / pow(BallCount, 2);
         }
-        initialized = true;
+        m_BallCount = BallCount;
     }
 
     for (int i = 0; i < BallCount; i++) {

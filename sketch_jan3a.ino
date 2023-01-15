@@ -17,17 +17,17 @@ void setup()
     Serial.println(" started with debug");
 
     Led::Instance().setup();
-    // Display::Instance().setup();
+    Display::Instance().setup();
     // SoilWetness::Instance().setup();
     Wifi::Instance().setup();
-    // Mqtt::Instance().setup();
+    Mqtt::Instance().setup();
 }
 
 void loop()
 {
     Led::Instance().loop();
-    // Display::Instance().loop();
+    Display::Instance().loop();
     // SoilWetness::Instance().loop();
     Wifi::Instance().loop();
-    // Mqtt::Instance().loop();
+    Mqtt::Instance().loop();
 }
