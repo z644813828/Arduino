@@ -7,6 +7,8 @@
 #define HEIGHT 64
 #define PAGES 8
 
+#define LINE_SYMBOLS 16
+
 struct Status {
     bool shown;
     String text;
@@ -39,10 +41,18 @@ class Display {
 
     void startSelfTest();
 
-    void setEnabled(bool enabled);
+    void setEnabled(bool e) { m_enabled = e; };
+    void setForceShow(bool e) { m_force_show = e; };
+
+    void setBrightness(int b) { m_on_brightness = b; }
+    int getBrightness() { return m_on_brightness; }
+
+    void setOffBrightness(int b) { m_off_brightness = b; }
+    int getOffBrightness() { return m_off_brightness; }
 
   private:
     void render(Status &s);
+    void changeBrightness(int brightness);
 
     Status m_monit;
     Status m_wifi;
@@ -56,6 +66,15 @@ class Display {
     bool m_text_printed;
 
     long int m_next_update_time;
+
+    int m_text_pos = 0;
+
+    bool m_enabled = false;
+    bool m_force_show = false;
+
+    int m_brightness = 255;
+    int m_on_brightness = 255;
+    int m_off_brightness = 20;
 };
 
 // clang-format off

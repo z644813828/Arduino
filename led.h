@@ -33,28 +33,35 @@ class Led {
     int getBrightness() { return m_brightness; }
 
     void setColor(String color);
+    String getColor() { return m_color_str; };
+
     void setEffect(String color);
+    String getEffect() { return m_effect; }
+
     void setErrorEffect(String color);
-    void setEffectArg(int idx, String arg);
+    String getErrorEffect() { return m_error_effect; }
+
+    void setEffectArg(int idx, int arg);
+    int getEffectArg(int idx);
 
     void setErrorCode(int code);
 
-    void setEnabled(bool enabled);
+    void setEnabled(bool e) { m_enabled = e; };
+    void setForceShow(bool e) { m_force_show = e; };
 
     void setDebug(bool d) { m_debug = d; }
     bool getDebug() { return m_debug; };
 
-    String getHtmlColors();
-    String getHtmlEffects();
-    String getHtmlErrorEffects();
-    String getHtmlArguments();
+    String getColors();
+    String getEffects();
+    String getArguments();
 
   private:
     // functions to interact with strip
     void setPixel(int Pixel, byte red, byte green, byte blue);
     void setAll(byte red, byte green, byte blue);
     void showStrip();
-    String getHtmlEffectsP(const String &color);
+    String getEffectsP(const String &color);
 
     // effects
     void StarryNight();
@@ -84,6 +91,7 @@ class Led {
     int m_error_code = 0;
     int m_brightness = 255;
     bool m_enabled = true;
+    bool m_force_show = false;
     bool m_debug = false;
 
     CRGB m_color = CRGB::Red;

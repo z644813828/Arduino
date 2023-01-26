@@ -7,8 +7,6 @@
 #include "wifi.h"
 
 #define MQTT_LED_ENABLED_TOPIC "led/enabled"
-#define MQTT_LED_BRIGHT_TOPIC "led/bright"
-#define MQTT_LED_COLOR_TOPIC "led/color"
 #define MQTT_MONIT_TEXT_TOPIC "monit/text"
 
 #define PORT 1883

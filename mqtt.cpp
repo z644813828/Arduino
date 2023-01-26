@@ -17,7 +17,6 @@ static std::map<String, String> m_data;
 
 void Mqtt::callback(char *topic, byte *payload, unsigned int length)
 {
-
     payload[length] = '\0';
     String str_topic = String(topic);
     String str_payload = String((char *)payload);
@@ -36,11 +35,7 @@ void Mqtt::callback(char *topic, byte *payload, unsigned int length)
     Serial.print("  ");
     Serial.println(str_payload);
 
-    if (str_topic == MQTT_LED_BRIGHT_TOPIC) {
-        Led::Instance().setBrightness(str_payload.toInt());
-    } else if (str_topic == MQTT_LED_COLOR_TOPIC) {
-        Led::Instance().setColor(str_payload);
-    } else if (str_topic == MQTT_MONIT_TEXT_TOPIC) {
+    if (str_topic == MQTT_MONIT_TEXT_TOPIC) {
         Display::Instance().setMonitText(str_payload);
         Led::Instance().setErrorCode(!str_payload.isEmpty());
     } else if (str_topic == MQTT_LED_ENABLED_TOPIC) {
@@ -71,8 +66,6 @@ void Mqtt::loop()
         return;
 
     Serial.println("MQTT connected");
-    m_client.subscribe(MQTT_LED_BRIGHT_TOPIC);
-    m_client.subscribe(MQTT_LED_COLOR_TOPIC);
     m_client.subscribe(MQTT_LED_ENABLED_TOPIC);
     m_client.subscribe(MQTT_MONIT_TEXT_TOPIC);
 }

@@ -16,8 +16,11 @@ class SoilWetness {
     void setDrySignal(int signal) { m_dry_signal = signal; }
     int getDrySignal() { return m_dry_signal; }
 
+    bool getData() { return m_data; };
+
   private:
     int m_dry_signal = 230;
+    bool m_data = false;
 };
 
 #endif

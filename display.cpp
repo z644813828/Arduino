@@ -99,6 +99,7 @@ void Display::setMonitText(String text)
 {
     m_monit.status = text.isEmpty();
     m_monit.text = text;
+    m_text_pos = -LINE_SYMBOLS;
 }
 
 void Display::setMqttConnected(bool b)
@@ -134,7 +135,14 @@ void Display::render(Status &s)
                 m_display.setTextSize(1);
                 m_display.setTextColor(WHITE);
                 m_display.setCursor(0, HEIGHT - 8);
-                m_display.println(s.text);
+                int pos = (m_text_pos < 0) ? 0 : m_text_pos;
+                String str = s.text.substring(pos);
+                m_text_pos += 1;
+                m_display.println(str);
+
+                if (m_text_pos >= (int(s.text.length()) - LINE_SYMBOLS)) {
+                    m_text_pos = -LINE_SYMBOLS;
+                }
             }
         }
 
@@ -148,6 +156,11 @@ void Display::loop()
 {
     if (millis() < m_next_update_time)
         return;
+
+    bool show = m_enabled || m_force_show;
+    m_logo68.status = show;
+
+    changeBrightness(show ? m_on_brightness : m_off_brightness);
 
     m_next_update_time += 200;
 
@@ -163,12 +176,13 @@ void Display::loop()
     if (!m_logo_printed)
         render(m_logo68);
 
-    m_display.dim(!m_logo68.status);
     m_display.display();
 }
 
 void Display::startSelfTest()
 {
+    m_display.clearDisplay();
+
     Status logo68 = m_logo68;
     Status wifi = m_wifi;
     Status mqtt = m_mqtt;
@@ -204,7 +218,40 @@ void Display::startSelfTest()
     test(power);
 }
 
-void Display::setEnabled(bool enabled)
+void Display::changeBrightness(int brightness)
 {
-    m_logo68.status = enabled;
+    if (m_brightness == brightness)
+        return;
+
+    m_brightness = brightness;
+
+    int prech;
+    int brigh;
+
+    switch (brightness) {
+    case 001 ... 255:
+        prech = 0;
+        brigh = brightness;
+        break;
+    case 256 ... 411:
+        prech = 16;
+        brigh = brightness - 156;
+        break;
+    default:
+        prech = 16;
+        brigh = 255;
+        break;
+    }
+
+    Serial.print(m_brightness);
+    Serial.print(" -> ");
+    Serial.print(prech);
+    Serial.print(" ");
+    Serial.print(brigh);
+    Serial.println(" ");
+
+    m_display.ssd1306_command(SSD1306_SETPRECHARGE);
+    m_display.ssd1306_command(prech);
+    m_display.ssd1306_command(SSD1306_SETCONTRAST);
+    m_display.ssd1306_command(brigh);
 }

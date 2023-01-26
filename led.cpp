@@ -6,8 +6,6 @@
 #define FASTLED_ESP8266_NODEMCU_PIN_ORDER
 #define FASTLED_ESP8266_D1_PIN_ORDER
 
-#define DEBUG_LED
-
 #include "led.h"
 
 Led &Led::Instance()
@@ -204,9 +202,6 @@ void Led::setup()
 
 void Led::loop()
 {
-    if (!m_enabled)
-        return;
-
     auto exec = [&](const String &effect) {
         if (effect == "StarryNight") {
             StarryNight();
@@ -247,7 +242,12 @@ void Led::loop()
         }
     };
 
-    FastLED.setBrightness(m_brightness);
+    bool show = m_enabled || m_force_show;
+    FastLED.setBrightness(show ? m_brightness : 0);
+    showStrip();
+
+    if (!show)
+        return;
 
     if (m_error_code)
         exec(m_error_effect);
@@ -257,6 +257,7 @@ void Led::loop()
 
 void Led::setBrightness(int b)
 {
+    Serial.println(b);
     FastLED.setBrightness(b);
     m_brightness = b;
     showStrip();
@@ -267,31 +268,31 @@ void Led::setErrorCode(int code)
     m_error_code = code;
 }
 
-void Led::setEnabled(bool e)
-{
-    m_enabled = e;
-    FastLED.setBrightness(e ? m_brightness : 0);
-    showStrip();
-}
-
 void Led::setColor(String color_in)
 {
+    Serial.println(color_in);
     m_color_str = color_in;
     m_color = m_color_map[m_color_str];
 }
 
 void Led::setEffect(String color_in)
 {
+    Serial.println(color_in);
     m_effect = color_in;
 }
 
 void Led::setErrorEffect(String color_in)
 {
+    Serial.println(color_in);
     m_error_effect = color_in;
 }
 
-void Led::setEffectArg(int idx, String arg)
+void Led::setEffectArg(int idx, int arg)
 {
+    Serial.print(idx);
+    Serial.print("=>");
+    Serial.println(arg);
+
     auto effect = m_effect_map.find(m_effect);
 
     if (effect == m_effect_map.end())
@@ -308,65 +309,69 @@ void Led::setEffectArg(int idx, String arg)
         it++;
 
     effect->second.erase(it->first);
-    effect->second.insert(std::pair<String, int>(it->first, arg.toInt()));
+    effect->second.insert(std::pair<String, int>(it->first, arg));
 }
 
-String Led::getHtmlColors()
+int Led::getEffectArg(int idx)
+{
+    auto effect = m_effect_map.find(m_effect);
+
+    if (effect == m_effect_map.end())
+        return 0;
+
+    auto effect_data = effect->second;
+
+    if (idx >= effect_data.size())
+        return 0;
+
+    std::map<String, int>::iterator it = effect_data.begin();
+
+    for (int i = 0; i < idx; i++)
+        it++;
+
+    return it->second;
+}
+
+String Led::getColors()
 {
     String str;
 
     std::map<String, CRGB>::iterator it = m_color_map.begin();
     while (it != m_color_map.end()) {
+        if (it != m_color_map.begin())
+            str += ", ";
         String color = it->first;
-        str += "    <option value=\"";
+        str += "\"";
         str += color;
         str += "\"";
-        if (color == m_color_str)
-            str += " selected";
-        str += ">";
-        str += color;
-        str += "</option>\n";
         it++;
     }
 
     return str;
 }
 
-String Led::getHtmlEffectsP(const String &current)
+String Led::getEffects()
 {
     String str;
 
     std::map<String, std::map<String, int>>::iterator it = m_effect_map.begin();
     while (it != m_effect_map.end()) {
+        if (it != m_effect_map.begin())
+            str += ", ";
         String effect = it->first;
-        str += "    <option value=\"";
+        str += "\"";
         str += effect;
         str += "\"";
-        if (effect == current)
-            str += " selected";
-        str += ">";
-        str += effect;
-        str += "</option>\n";
         it++;
     }
 
     return str;
 }
-String Led::getHtmlEffects()
-{
-    return getHtmlEffectsP(m_effect);
-}
 
-String Led::getHtmlErrorEffects()
-{
-    return getHtmlEffectsP(m_error_effect);
-}
-
-String Led::getHtmlArguments()
+String Led::getArguments()
 {
     String str;
 
-    int i = 0;
     auto effect = m_effect_map.find(m_effect);
 
     if (effect == m_effect_map.end())
@@ -376,23 +381,11 @@ String Led::getHtmlArguments()
 
     std::map<String, int>::iterator it = effect_data.begin();
     while (it != effect_data.end()) {
+        if (it != effect_data.begin())
+            str += ", ";
         String key = it->first;
         String value = String(it->second);
-        // clang-format off
-        str += R"(
-            <form class="d-flex" action="/get">
-				<button class="btn btn-light" type="submit">Set</button>
-                <div class="input-group mx-2">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text" id="basic-addon1">)" + key + R"(</span>
-                    </div>
-                    <input type="text" class="form-control" aria-describedby="basic-addon1"
-                        name="effect_arg_)" + String(i) + R"(" placeholder=")" + value + R"(">
-                </div>
-            </form>
-            )";
-            i++;
-        // clang-format on
+        str += R"( ")" + key + R"(": )" + value + R"()";
         it++;
     }
     return str;
