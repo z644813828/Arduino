@@ -7,10 +7,11 @@
 #include <Adafruit_SSD1306.h>
 #include <Wire.h>
 
+#include "config.h"
 #include "display.h"
 
 #define OLED_RESET -1 // Reset pin # (or -1 if sharing Arduino reset pin)
-Adafruit_SSD1306 m_display(WIDTH, HEIGHT, &Wire, OLED_RESET);
+Adafruit_SSD1306 m_display(DISPLAY_WIDTH, DISPLAY_HEIGHT, &Wire, OLED_RESET);
 
 Display::Display()
 {
@@ -62,13 +63,13 @@ Display::Display()
 
     // main icon
     m_logo68.status = true;
-    m_logo68.x = (WIDTH - 68) / 2;
+    m_logo68.x = (DISPLAY_WIDTH - 68) / 2;
     m_logo68.y = 16;
     m_logo68.img = Rog6834;
     m_logo68.width = 68;
     m_logo68.height = 34;
 
-    m_logo34.x = (WIDTH - 34) / 2;
+    m_logo34.x = (DISPLAY_WIDTH - 34) / 2;
     m_logo68.y = 16;
     m_logo34.img = Rog6834;
     m_logo34.width = 34;
@@ -83,7 +84,7 @@ Display &Display::Instance()
 
 void Display::setup()
 {
-    m_display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+    m_display.begin(SSD1306_SWITCHCAPVCC, GPIO_DISPLAY_PIN);
 
     m_display.clearDisplay();
     m_display.setTextSize(1);
@@ -99,7 +100,7 @@ void Display::setMonitText(String text)
 {
     m_monit.status = text.isEmpty();
     m_monit.text = text;
-    m_text_pos = -LINE_SYMBOLS;
+    m_text_pos = -DISPLAY_LINE_SYMBOLS;
 }
 
 void Display::setMqttConnected(bool b)
@@ -121,35 +122,36 @@ void Display::render(Status &s)
 {
     if (s.status) {
         m_display.drawBitmap(s.x, s.y, s.img, s.width, s.height, WHITE);
-    } else {
-        if (!m_logo_printed) {
-            m_logo_printed = true;
-            // convert (8*8 || 16*8) . (34*34 || 68*34)
-            Status &logo = s.width == 8 ? m_logo34 : m_logo68;
-            m_display.drawBitmap(logo.x, logo.y, s.img_full, logo.width, logo.height, WHITE);
-        }
+        return;
+    }
 
-        if (!m_text_printed) {
-            m_text_printed = true;
-            if (!s.text.isEmpty()) {
-                m_display.setTextSize(1);
-                m_display.setTextColor(WHITE);
-                m_display.setCursor(0, HEIGHT - 8);
-                int pos = (m_text_pos < 0) ? 0 : m_text_pos;
-                String str = s.text.substring(pos);
-                m_text_pos += 1;
-                m_display.println(str);
+    if (!m_logo_printed) {
+        m_logo_printed = true;
+        // convert (8*8 || 16*8) . (34*34 || 68*34)
+        Status &logo = s.width == 8 ? m_logo34 : m_logo68;
+        m_display.drawBitmap(logo.x, logo.y, s.img_full, logo.width, logo.height, WHITE);
+    }
 
-                if (m_text_pos >= (int(s.text.length()) - LINE_SYMBOLS)) {
-                    m_text_pos = -LINE_SYMBOLS;
-                }
+    if (!m_text_printed) {
+        m_text_printed = true;
+        if (!s.text.isEmpty()) {
+            m_display.setTextSize(1);
+            m_display.setTextColor(WHITE);
+            m_display.setCursor(0, DISPLAY_HEIGHT - 8);
+            int pos = (m_text_pos < 0) ? 0 : m_text_pos;
+            String str = s.text.substring(pos);
+            m_text_pos += 1;
+            m_display.println(str);
+
+            if (m_text_pos >= (int(s.text.length()) - DISPLAY_LINE_SYMBOLS)) {
+                m_text_pos = -DISPLAY_LINE_SYMBOLS;
             }
         }
-
-        if (s.shown)
-            m_display.drawBitmap(s.x, s.y, s.img, s.width, s.height, WHITE);
-        s.shown = !s.shown;
     }
+
+    if (s.shown)
+        m_display.drawBitmap(s.x, s.y, s.img, s.width, s.height, WHITE);
+    s.shown = !s.shown;
 }
 
 void Display::loop()
@@ -157,22 +159,27 @@ void Display::loop()
     if (millis() < m_next_update_time)
         return;
 
-    bool show = m_enabled || m_force_show;
+    if (m_force_off) {
+        m_display.clearDisplay();
+        return;
+    }
+
+    bool show = m_enabled || m_force_on;
     m_logo68.status = show;
 
     changeBrightness(show ? m_on_brightness : m_off_brightness);
 
     m_next_update_time += 200;
-
     m_display.clearDisplay();
-
     m_logo_printed = false;
     m_text_printed = false;
+
     render(m_wifi);
     render(m_mqtt);
     render(m_monit);
     render(m_soil_wetness);
     render(m_power);
+
     if (!m_logo_printed)
         render(m_logo68);
 
@@ -242,13 +249,6 @@ void Display::changeBrightness(int brightness)
         brigh = 255;
         break;
     }
-
-    Serial.print(m_brightness);
-    Serial.print(" -> ");
-    Serial.print(prech);
-    Serial.print(" ");
-    Serial.print(brigh);
-    Serial.println(" ");
 
     m_display.ssd1306_command(SSD1306_SETPRECHARGE);
     m_display.ssd1306_command(prech);

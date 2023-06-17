@@ -1,0 +1,35 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#include <Arduino.h>
+
+#define VERSION "1.0.0"
+
+// ARGB_STRIP
+#define GPIO_LED_STRIP_PIN D5
+#define GPIO_LED_STRIP_PIN_STR "D5"
+#define LED_STRIP_LEDSNUM 80
+
+// Motion detector
+#define GPIO_MOTION_PIN D0
+#define GPIO_MOTION_PIN_STR "D0"
+
+// Front panel
+#define GPIO_POWER_BUTTON_PIN D3
+#define GPIO_POWER_BUTTON_PIN_STR "D3"
+#define GPIO_ACKNOWLEDGE_BUTTON_PIN D4
+#define GPIO_ACKNOWLEDGE_BUTTON_PIN_STR "D4"
+#define GPIO_POWER_LED_PIN D7
+#define GPIO_POWER_LED_PIN_STR "D7"
+#define GPIO_ERROR_LED_PIN D6
+#define GPIO_ERROR_LED_PIN_STR "D6"
+
+// OLED display
+#define GPIO_DISPLAY_PIN 0x3C
+#define GPIO_DISPLAY_PIN_STR "0x3C"
+#define DISPLAY_WIDTH 128
+#define DISPLAY_HEIGHT 64
+#define DISPLAY_PAGES 8
+#define DISPLAY_LINE_SYMBOLS 16
+
+#endif

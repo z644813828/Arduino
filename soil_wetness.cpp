@@ -14,6 +14,6 @@ SoilWetness &SoilWetness::Instance()
 void SoilWetness::loop()
 {
     // Display::Instance().setSoilWetness(analogRead(0) < m_dry_signal);
-    // Display::Instance().setSoilWetness(true);
+    Display::Instance().setSoilWetness(true);
     m_data = true;
 }

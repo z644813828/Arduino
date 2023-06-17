@@ -5,9 +5,7 @@
 #include <FastLED.h>
 #include <map>
 
-#define LED_PIN D3
-#define LED_NUM 80
-#define NUM_LEDS LED_NUM
+#include "config.h"
 
 // clang-format off
 #define DEBUG \
@@ -47,7 +45,9 @@ class Led {
     void setErrorCode(int code);
 
     void setEnabled(bool e) { m_enabled = e; };
-    void setForceShow(bool e) { m_force_show = e; };
+    void setForceOn(bool e) { m_force_on = e; };
+    void setForceOff(bool e) { m_force_off = e; };
+    void setSilenceError(bool e) { m_silence_error = e; };
 
     void setDebug(bool d) { m_debug = d; }
     bool getDebug() { return m_debug; };
@@ -86,12 +86,14 @@ class Led {
     void fillColorMap();
     void fillEffectsMap();
 
-    CRGB m_strip[LED_NUM];
+    CRGB m_strip[LED_STRIP_LEDSNUM];
 
     int m_error_code = 0;
+    bool m_silence_error = false;
     int m_brightness = 255;
     bool m_enabled = true;
-    bool m_force_show = false;
+    bool m_force_on = false;
+    bool m_force_off = false;
     bool m_debug = false;
 
     CRGB m_color = CRGB::Red;

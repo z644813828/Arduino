@@ -3,12 +3,6 @@
 
 #include <Arduino.h>
 
-#define WIDTH 128
-#define HEIGHT 64
-#define PAGES 8
-
-#define LINE_SYMBOLS 16
-
 struct Status {
     bool shown;
     String text;
@@ -42,7 +36,8 @@ class Display {
     void startSelfTest();
 
     void setEnabled(bool e) { m_enabled = e; };
-    void setForceShow(bool e) { m_force_show = e; };
+    void setForceOn(bool e) { m_force_on = e; };
+    void setForceOff(bool e) { m_force_off = e; };
 
     void setBrightness(int b) { m_on_brightness = b; }
     int getBrightness() { return m_on_brightness; }
@@ -70,7 +65,8 @@ class Display {
     int m_text_pos = 0;
 
     bool m_enabled = false;
-    bool m_force_show = false;
+    bool m_force_on = false;
+    bool m_force_off = false;
 
     int m_brightness = 255;
     int m_on_brightness = 255;

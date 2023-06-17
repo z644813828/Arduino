@@ -1,5 +1,6 @@
 #include <EEPROM.h>
 
+#include "fpanel.h"
 #include "display.h"
 #include "eeprom.h"
 #include "led.h"
@@ -28,9 +29,16 @@ void Eeprom::load()
         Led::Instance().setEffectArg(i, data.effect_arg[i]);
 
     SoilWetness::Instance().setDrySignal(data.soil_wetness);
-    Motion::Instance().setTimeout(data.motion_timeout);
+
     Display::Instance().setBrightness(data.display_brightness);
     Display::Instance().setOffBrightness(data.display_off_brightness);
+
+    Motion::Instance().setTimeout(data.motion_timeout);
+    Motion::Instance().setTimeStart(data.motion_time_start);
+    Motion::Instance().setTimeStop(data.motion_time_stop);
+    Motion::Instance().setTimeStop(data.motion_time_stop);
+    FPanel::Instance().setPowerTimeout(data.fpanel_power_timeout);
+    FPanel::Instance().setAcknowledgeTimeout(data.fpanel_acknowledge_timeout);
 }
 
 void Eeprom::save()
@@ -47,10 +55,16 @@ void Eeprom::save()
         data.effect_arg[i] = Led::Instance().getEffectArg(i);
 
     data.soil_wetness = SoilWetness::Instance().getDrySignal();
-    data.motion_timeout = Motion::Instance().getTimeout();
 
     data.display_brightness = Display::Instance().getBrightness();
     data.display_off_brightness = Display::Instance().getOffBrightness();
+
+    data.motion_timeout = Motion::Instance().getTimeout();
+    data.motion_time_start = Motion::Instance().getTimeStart();
+    data.motion_time_stop = Motion::Instance().getTimeStop();
+
+    data.fpanel_power_timeout = FPanel::Instance().getPowerTimeout();
+    data.fpanel_acknowledge_timeout = FPanel::Instance().getAcknowledgeTimeout();
 
     Serial.println("Eeprom::save");
     data.println();

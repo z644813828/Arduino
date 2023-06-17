@@ -1,5 +1,6 @@
 #include "display.h"
 #include "eeprom.h"
+#include "fpanel.h"
 #include "led.h"
 #include "motion.h"
 #include "mqtt.h"
@@ -10,6 +11,7 @@
 
 Wifi::Wifi()
     : m_server(80)
+    , m_timeClient(m_ntpUDP, "pool.ntp.org", m_utcOffsetInSeconds)
 {
 }
 
@@ -60,7 +62,11 @@ void Wifi::InitHandler()
                 "soil_wetness": )" + String(SoilWetness::Instance().getDrySignal()) + R"(,
                 "motion_timeout": )" + String(Motion::Instance().getTimeout()) + R"(,
                 "display_brightness": )" + String(Display::Instance().getBrightness()) + R"(,
-                "display_off_brightness": )" + String(Display::Instance().getOffBrightness()) + R"(
+                "display_off_brightness": )" + String(Display::Instance().getOffBrightness()) + R"(,
+                "motion_time_start": )" + String(Motion::Instance().getTimeStart()) + R"(,
+                "motion_time_stop": )" + String(Motion::Instance().getTimeStop()) + R"(,
+                "fpanel_power_timeout" : )" + String(FPanel::Instance().getPowerTimeout()) + R"(,
+                "fpanel_acknowledge_timeout" : )" + String(FPanel::Instance().getAcknowledgeTimeout()) + R"(
             }
         )";
         // clang-format on
@@ -72,7 +78,9 @@ void Wifi::InitHandler()
         String str = R"(
             {
                 "soil_wetness": )" + String(SoilWetness::Instance().getData()) + R"(,
-                "motion": )" + String(Motion::Instance().getData()) + R"(
+                "motion": )" + String(Motion::Instance().getData()) + R"(,
+                "power": )" + String(FPanel::Instance().getPower()) + R"(,
+                "acknowledge": )" + String(FPanel::Instance().getAcknowledge()) + R"(
             }
         )";
         // clang-format on
@@ -87,12 +95,13 @@ void Wifi::InitHandler()
 
     m_server.on("/get", [&]() {
         String arg;
-        String args_list;
+        String args_list = "";
 
         auto ARG = [&](String arg_name, const auto &cb) {
             if ((arg = m_server.arg(arg_name)) != "") {
-                Led::Instance().setColor(arg);
                 cb();
+                args_list += ";";
+                args_list += arg;
             }
         };
 
@@ -107,6 +116,10 @@ void Wifi::InitHandler()
         ARG(HTTP_REQUEST_MOTION_TIMEOUT,            [&]() { Motion::Instance().setTimeout(arg.toInt()); });
         ARG(HTTP_REQUEST_DISPLAY_BRIGHTNESS,        [&]() { Display::Instance().setBrightness(arg.toInt()); });
         ARG(HTTP_REQUEST_DISPLAY_OFF_BRIGHTNESS,    [&]() { Display::Instance().setOffBrightness(arg.toInt()); });
+        ARG(HTTP_REQUEST_MOTION_TIME_START,         [&]() { Motion::Instance().setTimeStart(arg.toInt()); });
+        ARG(HTTP_REQUEST_MOTION_TIME_STOP,          [&]() { Motion::Instance().setTimeStop(arg.toInt()); });
+        ARG(HTTP_REQUEST_FPANEL_POWER,              [&]() { FPanel::Instance().togglePower(); });
+        ARG(HTTP_REQUEST_FPANEL_ACKNOWLEDGE,        [&]() { FPanel::Instance().toggleAcknowledge(); });
         // clang-format on
 
         for (int i = 0; i < 10; i++) {
@@ -129,6 +142,7 @@ void Wifi::loop()
             Serial.println(WiFi.localIP());
             InitHandler();
             m_server.begin();
+            m_timeClient.begin();
         } else {
             Serial.println("WiFi Disconnected");
         }
@@ -138,4 +152,18 @@ void Wifi::loop()
     Display::Instance().setWifiConnected(m_wifiStatus);
 
     m_server.handleClient();
+    m_timeClient.update();
+}
+
+int Wifi::getTime()
+{
+    if (!m_wifiStatus)
+        return -1;
+
+    return (m_timeClient.getHours() + 3) * 60 + m_timeClient.getMinutes();
+}
+
+unsigned long Wifi::getEpochTime()
+{
+    return m_timeClient.getEpochTime();
 }

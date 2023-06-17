@@ -6,6 +6,7 @@
 #define FASTLED_ESP8266_NODEMCU_PIN_ORDER
 #define FASTLED_ESP8266_D1_PIN_ORDER
 
+#include "config.h"
 #include "led.h"
 
 Led &Led::Instance()
@@ -194,7 +195,7 @@ void Led::fillEffectsMap()
 
 void Led::setup()
 {
-    FastLED.addLeds<WS2812, LED_PIN, GRB>(m_strip, LED_NUM);
+    FastLED.addLeds<WS2812, GPIO_LED_STRIP_PIN, GRB>(m_strip, LED_STRIP_LEDSNUM);
     FastLED.setBrightness(255);
     fillColorMap();
     fillEffectsMap();
@@ -242,14 +243,14 @@ void Led::loop()
         }
     };
 
-    bool show = m_enabled || m_force_show;
+    bool show = (m_enabled || m_force_on) && !m_force_off;
     FastLED.setBrightness(show ? m_brightness : 0);
     showStrip();
 
     if (!show)
         return;
 
-    if (m_error_code)
+    if (m_error_code && !m_silence_error)
         exec(m_error_effect);
     else
         exec(m_effect);
@@ -394,7 +395,7 @@ String Led::getArguments()
 void Led::showStrip()
 {
     if (m_debug) {
-        for (int i = 0; i < LED_NUM; i++) {
+        for (int i = 0; i < LED_STRIP_LEDSNUM; i++) {
             if (!m_strip[i].r && !m_strip[i].g && !m_strip[i].b)
                 Serial.print(" ");
             else if (FastLED.getBrightness())
@@ -420,7 +421,7 @@ void Led::setPixel(int Pixel, byte red, byte green, byte blue)
 
 void Led::setAll(byte red, byte green, byte blue)
 {
-    for (int i = 0; i < LED_NUM; i++) {
+    for (int i = 0; i < LED_STRIP_LEDSNUM; i++) {
         setPixel(i, red, green, blue);
     }
     showStrip();
@@ -448,13 +449,13 @@ void Led::StarryNight()
     int Speed = args[0];
     int UnsetTime = args[1];
 
-    for (int i = 0; i < LED_NUM / 10; ++i)
-        m_strip[rand() % LED_NUM] = CRGB::White;
+    for (int i = 0; i < LED_STRIP_LEDSNUM / 10; ++i)
+        m_strip[rand() % LED_STRIP_LEDSNUM] = CRGB::White;
     showStrip();
 
     delay(UnsetTime);
 
-    for (int i = 0; i < LED_NUM; ++i)
+    for (int i = 0; i < LED_STRIP_LEDSNUM; ++i)
         m_strip[i] = m_color;
 
     int step = 100;
@@ -536,7 +537,7 @@ void Led::BouncingColoredBalls()
                 ImpactVelocity[i] = ImpactVelocityStart;
             }
         }
-        Position[i] = round(Height[i] * (LED_NUM - 1) / StartHeight);
+        Position[i] = round(Height[i] * (LED_STRIP_LEDSNUM - 1) / StartHeight);
     }
 
     for (int i = 0; i < BallCount; i++) {
@@ -609,7 +610,7 @@ void Led::BouncingBalls()
                 ImpactVelocity[i] = ImpactVelocityStart;
             }
         }
-        Position[i] = round(Height[i] * (NUM_LEDS - 1) / StartHeight);
+        Position[i] = round(Height[i] * (LED_STRIP_LEDSNUM - 1) / StartHeight);
     }
 
     for (int i = 0; i < BallCount; i++) {
@@ -626,7 +627,7 @@ void Led::ColorWipe()
 
     int SpeedDelay = args[0];
 
-    for (uint16_t i = 0; i < NUM_LEDS; i++) {
+    for (uint16_t i = 0; i < LED_STRIP_LEDSNUM; i++) {
         setPixel(i, red, green, blue);
         showStrip();
         delay(SpeedDelay);
@@ -640,7 +641,7 @@ void Led::CylonBounce()
     int SpeedDelay = args[1];
     int ReturnDelay = args[2];
 
-    for (int i = 0; i < NUM_LEDS - EyeSize - 2; i++) {
+    for (int i = 0; i < LED_STRIP_LEDSNUM - EyeSize - 2; i++) {
         setAll(0, 0, 0);
         setPixel(i, red / 10, green / 10, blue / 10);
         for (int j = 1; j <= EyeSize; j++) {
@@ -653,7 +654,7 @@ void Led::CylonBounce()
 
     delay(ReturnDelay);
 
-    for (int i = NUM_LEDS - EyeSize - 2; i > 0; i--) {
+    for (int i = LED_STRIP_LEDSNUM - EyeSize - 2; i > 0; i--) {
         setAll(0, 0, 0);
         setPixel(i, red / 10, green / 10, blue / 10);
         for (int j = 1; j <= EyeSize; j++) {
@@ -708,7 +709,7 @@ void Led::Fire()
             setPixel(Pixel, heatramp, 0, 0);
         }
     };
-    static byte heat[NUM_LEDS];
+    static byte heat[LED_STRIP_LEDSNUM];
     int cooldown;
 
     DEF_COLOR
@@ -718,8 +719,8 @@ void Led::Fire()
     int SpeedDelay = args[2];
 
     // Step 1.  Cool down every cell a little
-    for (int i = 0; i < NUM_LEDS; i++) {
-        cooldown = random(0, ((Cooling * 10) / NUM_LEDS) + 2);
+    for (int i = 0; i < LED_STRIP_LEDSNUM; i++) {
+        cooldown = random(0, ((Cooling * 10) / LED_STRIP_LEDSNUM) + 2);
 
         if (cooldown > heat[i]) {
             heat[i] = 0;
@@ -729,7 +730,7 @@ void Led::Fire()
     }
 
     // Step 2.  Heat from each cell drifts 'up' and diffuses a little
-    for (int k = NUM_LEDS - 1; k >= 2; k--) {
+    for (int k = LED_STRIP_LEDSNUM - 1; k >= 2; k--) {
         heat[k] = (heat[k - 1] + heat[k - 2] + heat[k - 2]) / 3;
     }
 
@@ -741,7 +742,7 @@ void Led::Fire()
     }
 
     // Step 4.  Convert heat to LED colors
-    for (int j = 0; j < NUM_LEDS; j++) {
+    for (int j = 0; j < LED_STRIP_LEDSNUM; j++) {
         setPixelHeatColor(j, heat[j]);
     }
 
@@ -762,7 +763,7 @@ void Led::HalloweenEyes()
     randomSeed(analogRead(0));
 
     int i;
-    int StartPoint = random(0, NUM_LEDS - (2 * EyeWidth) - EyeSpace);
+    int StartPoint = random(0, LED_STRIP_LEDSNUM - (2 * EyeWidth) - EyeSpace);
     int Start2ndEye = StartPoint + EyeWidth + EyeSpace;
 
     for (i = 0; i < EyeWidth; i++) {
@@ -803,7 +804,7 @@ void Led::NewKITT()
     int ReturnDelay = args[2];
 
     auto CenterToOutside = [&]() {
-        for (int i = ((NUM_LEDS - EyeSize) / 2); i >= 0; i--) {
+        for (int i = ((LED_STRIP_LEDSNUM - EyeSize) / 2); i >= 0; i--) {
             setAll(0, 0, 0);
 
             setPixel(i, red / 10, green / 10, blue / 10);
@@ -812,11 +813,11 @@ void Led::NewKITT()
             }
             setPixel(i + EyeSize + 1, red / 10, green / 10, blue / 10);
 
-            setPixel(NUM_LEDS - i, red / 10, green / 10, blue / 10);
+            setPixel(LED_STRIP_LEDSNUM - i, red / 10, green / 10, blue / 10);
             for (int j = 1; j <= EyeSize; j++) {
-                setPixel(NUM_LEDS - i - j, red, green, blue);
+                setPixel(LED_STRIP_LEDSNUM - i - j, red, green, blue);
             }
-            setPixel(NUM_LEDS - i - EyeSize - 1, red / 10, green / 10, blue / 10);
+            setPixel(LED_STRIP_LEDSNUM - i - EyeSize - 1, red / 10, green / 10, blue / 10);
 
             showStrip();
             delay(SpeedDelay);
@@ -825,7 +826,7 @@ void Led::NewKITT()
     };
 
     auto OutsideToCenter = [&]() {
-        for (int i = 0; i <= ((NUM_LEDS - EyeSize) / 2); i++) {
+        for (int i = 0; i <= ((LED_STRIP_LEDSNUM - EyeSize) / 2); i++) {
             setAll(0, 0, 0);
 
             setPixel(i, red / 10, green / 10, blue / 10);
@@ -834,11 +835,11 @@ void Led::NewKITT()
             }
             setPixel(i + EyeSize + 1, red / 10, green / 10, blue / 10);
 
-            setPixel(NUM_LEDS - i, red / 10, green / 10, blue / 10);
+            setPixel(LED_STRIP_LEDSNUM - i, red / 10, green / 10, blue / 10);
             for (int j = 1; j <= EyeSize; j++) {
-                setPixel(NUM_LEDS - i - j, red, green, blue);
+                setPixel(LED_STRIP_LEDSNUM - i - j, red, green, blue);
             }
-            setPixel(NUM_LEDS - i - EyeSize - 1, red / 10, green / 10, blue / 10);
+            setPixel(LED_STRIP_LEDSNUM - i - EyeSize - 1, red / 10, green / 10, blue / 10);
 
             showStrip();
             delay(SpeedDelay);
@@ -847,7 +848,7 @@ void Led::NewKITT()
     };
 
     auto LeftToRight = [&]() {
-        for (int i = 0; i < NUM_LEDS - EyeSize - 2; i++) {
+        for (int i = 0; i < LED_STRIP_LEDSNUM - EyeSize - 2; i++) {
             setAll(0, 0, 0);
             setPixel(i, red / 10, green / 10, blue / 10);
             for (int j = 1; j <= EyeSize; j++) {
@@ -861,7 +862,7 @@ void Led::NewKITT()
     };
 
     auto RightToLeft = [&]() {
-        for (int i = NUM_LEDS - EyeSize - 2; i > 0; i--) {
+        for (int i = LED_STRIP_LEDSNUM - EyeSize - 2; i > 0; i--) {
             setAll(0, 0, 0);
             setPixel(i, red / 10, green / 10, blue / 10);
             for (int j = 1; j <= EyeSize; j++) {
@@ -915,8 +916,8 @@ void Led::RainbowCycle()
     uint16_t i, j;
 
     for (j = 0; j < 256 * 5; j++) { // 5 cycles of all colors on wheel
-        for (i = 0; i < NUM_LEDS; i++) {
-            c = Wheel(((i * 256 / NUM_LEDS) + j) & 255);
+        for (i = 0; i < LED_STRIP_LEDSNUM; i++) {
+            c = Wheel(((i * 256 / LED_STRIP_LEDSNUM) + j) & 255);
             setPixel(i, *c, *(c + 1), *(c + 2));
         }
         showStrip();
@@ -934,7 +935,7 @@ void Led::TwinkleRandom()
     setAll(0, 0, 0);
 
     for (int i = 0; i < Count; i++) {
-        setPixel(random(NUM_LEDS), random(0, 255), random(0, 255), random(0, 255));
+        setPixel(random(LED_STRIP_LEDSNUM), random(0, 255), random(0, 255), random(0, 255));
         showStrip();
         delay(SpeedDelay);
         if (OnlyOne) {
@@ -952,9 +953,9 @@ void Led::RunningLights()
 
     int Position = 0;
 
-    for (int i = 0; i < NUM_LEDS * 2; i++) {
+    for (int i = 0; i < LED_STRIP_LEDSNUM * 2; i++) {
         Position++; // = 0; //Position + Rate;
-        for (int i = 0; i < NUM_LEDS; i++) {
+        for (int i = 0; i < LED_STRIP_LEDSNUM; i++) {
             // sine wave, 3 offset waves make a rainbow!
             // float level = sin(i+Position) * 127 + 128;
             // setPixel(i,level,0,0);
@@ -976,7 +977,7 @@ void Led::SnowSparkle()
 
     setAll(red, green, blue);
 
-    int Pixel = random(NUM_LEDS);
+    int Pixel = random(LED_STRIP_LEDSNUM);
     setPixel(Pixel, 0xff, 0xff, 0xff);
     showStrip();
     delay(SparkleDelay);
@@ -990,7 +991,7 @@ void Led::Sparkle()
     DEF_COLOR
     int SpeedDelay = args[0];
 
-    int Pixel = random(NUM_LEDS);
+    int Pixel = random(LED_STRIP_LEDSNUM);
     setPixel(Pixel, red, green, blue);
     showStrip();
     delay(SpeedDelay);
@@ -1047,7 +1048,7 @@ void Led::TheaterChaseRainbow()
 
     for (int j = 0; j < 256; j++) { // cycle all 256 colors in the wheel
         for (int q = 0; q < 3; q++) {
-            for (int i = 0; i < NUM_LEDS; i = i + 3) {
+            for (int i = 0; i < LED_STRIP_LEDSNUM; i = i + 3) {
                 c = Wheel((i + j) % 255);
                 setPixel(i + q, *c, *(c + 1), *(c + 2)); // turn every third pixel on
             }
@@ -1055,7 +1056,7 @@ void Led::TheaterChaseRainbow()
 
             delay(SpeedDelay);
 
-            for (int i = 0; i < NUM_LEDS; i = i + 3) {
+            for (int i = 0; i < LED_STRIP_LEDSNUM; i = i + 3) {
                 setPixel(i + q, 0, 0, 0); // turn every third pixel off
             }
         }
@@ -1069,14 +1070,14 @@ void Led::TheaterChase()
 
     for (int j = 0; j < 10; j++) { // do 10 cycles of chasing
         for (int q = 0; q < 3; q++) {
-            for (int i = 0; i < NUM_LEDS; i = i + 3) {
+            for (int i = 0; i < LED_STRIP_LEDSNUM; i = i + 3) {
                 setPixel(i + q, red, green, blue); // turn every third pixel on
             }
             showStrip();
 
             delay(SpeedDelay);
 
-            for (int i = 0; i < NUM_LEDS; i = i + 3) {
+            for (int i = 0; i < LED_STRIP_LEDSNUM; i = i + 3) {
                 setPixel(i + q, 0, 0, 0); // turn every third pixel off
             }
         }
@@ -1093,7 +1094,7 @@ void Led::Twinkle()
     setAll(0, 0, 0);
 
     for (int i = 0; i < Count; i++) {
-        setPixel(random(NUM_LEDS), red, green, blue);
+        setPixel(random(LED_STRIP_LEDSNUM), red, green, blue);
         showStrip();
         delay(SpeedDelay);
         if (OnlyOne) {

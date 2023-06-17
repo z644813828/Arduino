@@ -1,12 +1,12 @@
+#include "config.h"
 #include "display.h"
 #include "eeprom.h"
+#include "fpanel.h"
 #include "led.h"
 #include "motion.h"
 #include "mqtt.h"
 #include "soil_wetness.h"
 #include "wifi.h"
-
-#define VERSION "1.0.0"
 
 void setup()
 {
@@ -22,6 +22,7 @@ void setup()
     Wifi::Instance().setup();
     Mqtt::Instance().setup();
     Motion::Instance().setup();
+    FPanel::Instance().setup();
 
     Eeprom::setup();
     Eeprom::load();
@@ -36,5 +37,6 @@ void loop()
     SoilWetness::Instance().loop();
     Wifi::Instance().loop();
     Mqtt::Instance().loop();
-    // Motion::Instance().loop();
+    Motion::Instance().loop();
+    FPanel::Instance().loop();
 }

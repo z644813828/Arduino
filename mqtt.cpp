@@ -1,3 +1,4 @@
+#include "fpanel.h"
 #include "display.h"
 #include "led.h"
 #include "mqtt.h"
@@ -38,6 +39,7 @@ void Mqtt::callback(char *topic, byte *payload, unsigned int length)
     if (str_topic == MQTT_MONIT_TEXT_TOPIC) {
         Display::Instance().setMonitText(str_payload);
         Led::Instance().setErrorCode(!str_payload.isEmpty());
+        FPanel::Instance().setErrorCode(!str_payload.isEmpty());
     } else if (str_topic == MQTT_LED_ENABLED_TOPIC) {
         Led::Instance().setEnabled(str_payload.toInt());
         Display::Instance().setEnabled(str_payload.toInt());
