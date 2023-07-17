@@ -82,7 +82,7 @@ void FPanel::loop()
         m_led_error_state = !m_led_error_state;
 
     digitalWrite(GPIO_POWER_LED_PIN, m_led_power_state);
-    digitalWrite(GPIO_ERROR_LED_PIN, m_led_power_state);
+    digitalWrite(GPIO_ERROR_LED_PIN, m_led_error_state);
 }
 
 static int toggle(int val, unsigned long timeout)

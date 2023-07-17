@@ -180,15 +180,15 @@ void Led::fillEffectsMap()
     I("ColorWipe", {{"SpeedDelay", 50}});
     I("CylonBounce", {{"EyeSize", 4}, {"SpeedDelay", 10}, {"ReturnDelay", 15}});
     I("Fire", {{"Cooling", 55}, {"Sparking", 120}, {"SpeedDelay", 15}});
-    I("HalloweenEyes", {{"EyeWidth", 1}, {"EyeSpace", 4}, {"Fade", true}});
-    I("NewKITT", {{"EyeSize", 8}, {"SpeedDelay", 10}, {"ReturnDelay", 50}});
+    // I("HalloweenEyes", {{"EyeWidth", 1}, {"EyeSpace", 4}, {"Fade", true}});
+    // I("NewKITT", {{"EyeSize", 8}, {"SpeedDelay", 10}, {"ReturnDelay", 50}});
     I("RainbowCycle", {{"SpeedDelay", 20}});
     I("TwinkleRandom", {{"Count", 20}, {" SpeedDelay", 100}, {"OnlyOne", 0}});
-    I("RunningLights", {{"WaveDelay", 50}});
+    // I("RunningLights", {{"WaveDelay", 50}});
     I("SnowSparkle", {{"SparkleDelay", 20}});
     I("Sparkle", {{"SpeedDelay", 0}});
     I("Strobe", {{"StrobeCount", 10}, {" FlashDelay", 50}, {" EndPause", 1000}});
-    I("TheaterChaseRainbow", {{"SpeedDelay", 50}});
+    // I("TheaterChaseRainbow", {{"SpeedDelay", 50}});
     I("TheaterChase", {{"SpeedDelay", 50}});
     I("Twinkle", {{"Count", 10}, {"SpeedDelay", 100}, {"OnlyOne", false}});
 }
@@ -199,6 +199,11 @@ void Led::setup()
     FastLED.setBrightness(255);
     fillColorMap();
     fillEffectsMap();
+
+    FastLED.setBrightness(m_brightness);
+    for (int i = 0; i < LED_STRIP_LEDSNUM; i++)
+        m_strip[i].r = 255;
+    showStrip();
 }
 
 void Led::loop()
@@ -244,8 +249,12 @@ void Led::loop()
     };
 
     bool show = (m_enabled || m_force_on) && !m_force_off;
-    FastLED.setBrightness(show ? m_brightness : 0);
-    showStrip();
+    int brightness = show ? m_brightness : 0;
+
+    if (brightness != m_brightness) {
+        FastLED.setBrightness(brightness);
+        showStrip();
+    }
 
     if (!show)
         return;
@@ -258,6 +267,7 @@ void Led::loop()
 
 void Led::setBrightness(int b)
 {
+    Serial.print("Led::setBrightness ");
     Serial.println(b);
     FastLED.setBrightness(b);
     m_brightness = b;
@@ -271,6 +281,7 @@ void Led::setErrorCode(int code)
 
 void Led::setColor(String color_in)
 {
+    Serial.print("Led::setColor ");
     Serial.println(color_in);
     m_color_str = color_in;
     m_color = m_color_map[m_color_str];
@@ -278,18 +289,21 @@ void Led::setColor(String color_in)
 
 void Led::setEffect(String color_in)
 {
+    Serial.print("Led::setEffect ");
     Serial.println(color_in);
     m_effect = color_in;
 }
 
 void Led::setErrorEffect(String color_in)
 {
+    Serial.print("Led::setErrorEffect ");
     Serial.println(color_in);
     m_error_effect = color_in;
 }
 
 void Led::setEffectArg(int idx, int arg)
 {
+    Serial.print("Led::setEffectArg ");
     Serial.print(idx);
     Serial.print("=>");
     Serial.println(arg);
@@ -397,7 +411,7 @@ void Led::showStrip()
     if (m_debug) {
         for (int i = 0; i < LED_STRIP_LEDSNUM; i++) {
             if (!m_strip[i].r && !m_strip[i].g && !m_strip[i].b)
-                Serial.print(" ");
+                Serial.print("_");
             else if (FastLED.getBrightness())
                 Serial.print("*");
             else
@@ -627,11 +641,15 @@ void Led::ColorWipe()
 
     int SpeedDelay = args[0];
 
-    for (uint16_t i = 0; i < LED_STRIP_LEDSNUM; i++) {
-        setPixel(i, red, green, blue);
-        showStrip();
-        delay(SpeedDelay);
-    }
+    static uint16_t i = 0;
+    if (i >= LED_STRIP_LEDSNUM)
+        i = 0;
+
+    setPixel(i, red, green, blue);
+    showStrip();
+    delay(SpeedDelay);
+
+    i++;
 }
 
 void Led::CylonBounce()
@@ -641,7 +659,25 @@ void Led::CylonBounce()
     int SpeedDelay = args[1];
     int ReturnDelay = args[2];
 
-    for (int i = 0; i < LED_STRIP_LEDSNUM - EyeSize - 2; i++) {
+    static uint16_t i = 0;
+    static int phase = 0;
+
+    if (i >= LED_STRIP_LEDSNUM - EyeSize - 2) {
+        phase = !phase;
+        delay(ReturnDelay);
+        i = 0;
+    }
+
+    if (phase == 0) {
+        setAll(0, 0, 0);
+        setPixel(i, red / 10, green / 10, blue / 10);
+        for (int j = 1; j <= EyeSize; j++) {
+            setPixel(i + j, red, green, blue);
+        }
+        setPixel(i + EyeSize + 1, red / 10, green / 10, blue / 10);
+        showStrip();
+        delay(SpeedDelay);
+    } else {
         setAll(0, 0, 0);
         setPixel(i, red / 10, green / 10, blue / 10);
         for (int j = 1; j <= EyeSize; j++) {
@@ -651,21 +687,6 @@ void Led::CylonBounce()
         showStrip();
         delay(SpeedDelay);
     }
-
-    delay(ReturnDelay);
-
-    for (int i = LED_STRIP_LEDSNUM - EyeSize - 2; i > 0; i--) {
-        setAll(0, 0, 0);
-        setPixel(i, red / 10, green / 10, blue / 10);
-        for (int j = 1; j <= EyeSize; j++) {
-            setPixel(i + j, red, green, blue);
-        }
-        setPixel(i + EyeSize + 1, red / 10, green / 10, blue / 10);
-        showStrip();
-        delay(SpeedDelay);
-    }
-
-    delay(ReturnDelay);
 }
 
 void Led::FadeInOut()
@@ -1005,16 +1026,21 @@ void Led::Strobe()
     int FlashDelay = args[1];
     int EndPause = args[2];
 
-    for (int j = 0; j < StrobeCount; j++) {
-        setAll(red, green, blue);
-        showStrip();
-        delay(FlashDelay);
-        setAll(0, 0, 0);
-        showStrip();
-        delay(FlashDelay);
+    static int j = 0;
+    if (j >= StrobeCount) {
+        delay(EndPause);
+        j = 0;
+        return;
     }
 
-    delay(EndPause);
+    setAll(red, green, blue);
+    showStrip();
+    delay(FlashDelay);
+    setAll(0, 0, 0);
+    showStrip();
+    delay(FlashDelay);
+
+    j++;
 }
 
 void Led::TheaterChaseRainbow()

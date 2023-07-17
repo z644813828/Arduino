@@ -15,7 +15,6 @@
 #define HTTP_REQUEST_LED_DEBUG "debug_led"
 #define HTTP_REQUEST_DISPLAY_TEST "display_test"
 #define HTTP_REQUEST_MOTION_TIMEOUT "motion_timeout"
-#define HTTP_REQUEST_REBOOT "reboot"
 #define HTTP_REQUEST_DISPLAY_BRIGHTNESS "display_brightness"
 #define HTTP_REQUEST_DISPLAY_OFF_BRIGHTNESS "display_off_brightness"
 #define HTTP_REQUEST_MOTION_TIME_START "motion_time_start"

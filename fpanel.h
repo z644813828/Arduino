@@ -30,11 +30,11 @@ class FPanel {
 
     int getPower() { return m_power.val; }
     int getAcknowledge() { return m_acknowledge.val; }
+    void togglePower();
+    void toggleAcknowledge();
 
   private:
     bool checkTime(Button &btn);
-    void togglePower();
-    void toggleAcknowledge();
 
     Button m_power;
     Button m_acknowledge;

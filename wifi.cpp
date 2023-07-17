@@ -53,7 +53,7 @@ void Wifi::InitHandler()
                     )" + Led::Instance().getColors() + R"(
                 ],
                 "current_effect": ")" + Led::Instance().getEffect() + R"(",
-                "current_error_effect": ")" + Led::Instance().getEffect() + R"(",
+                "current_error_effect": ")" + Led::Instance().getErrorEffect() + R"(",
                 "current_color": ")" + Led::Instance().getColor() + R"(",
                 "arguments": {
                     )" + Led::Instance().getArguments() + R"(
@@ -93,6 +93,11 @@ void Wifi::InitHandler()
         m_server.send(200, "text/html", str);
     });
 
+    m_server.on("/reboot", [&]() {
+        ESP.restart();
+        m_server.send(200, "text/html", "OK");
+    });
+
     m_server.on("/get", [&]() {
         String arg;
         String args_list = "";
@@ -110,14 +115,18 @@ void Wifi::InitHandler()
         ARG(HTTP_REQUEST_EFFECT,                    [&]() { Led::Instance().setEffect(arg); });
         ARG(HTTP_REQUEST_ERROR_EFFECT,              [&]() { Led::Instance().setErrorEffect(arg); });
         ARG(HTTP_REQUEST_BRIGHTNESS,                [&]() { Led::Instance().setBrightness(arg.toInt()); });
+        ARG(HTTP_REQUEST_LED_DEBUG,                 [&]() { Led::Instance().setDebug(arg.toInt()); });
+
         ARG(HTTP_REQUEST_SOIL_WETNESS,              [&]() { SoilWetness::Instance().setDrySignal(arg.toInt()); });
-        ARG(HTTP_REQUEST_DISPLAY_TEST,              [&]() { Display::Instance().startSelfTest(); });
-        ARG(HTTP_REQUEST_REBOOT,                    [&]() { ESP.restart(); });
+
         ARG(HTTP_REQUEST_MOTION_TIMEOUT,            [&]() { Motion::Instance().setTimeout(arg.toInt()); });
-        ARG(HTTP_REQUEST_DISPLAY_BRIGHTNESS,        [&]() { Display::Instance().setBrightness(arg.toInt()); });
-        ARG(HTTP_REQUEST_DISPLAY_OFF_BRIGHTNESS,    [&]() { Display::Instance().setOffBrightness(arg.toInt()); });
         ARG(HTTP_REQUEST_MOTION_TIME_START,         [&]() { Motion::Instance().setTimeStart(arg.toInt()); });
         ARG(HTTP_REQUEST_MOTION_TIME_STOP,          [&]() { Motion::Instance().setTimeStop(arg.toInt()); });
+
+        ARG(HTTP_REQUEST_DISPLAY_TEST,              [&]() { Display::Instance().startSelfTest(); });
+        ARG(HTTP_REQUEST_DISPLAY_BRIGHTNESS,        [&]() { Display::Instance().setBrightness(arg.toInt()); });
+        ARG(HTTP_REQUEST_DISPLAY_OFF_BRIGHTNESS,    [&]() { Display::Instance().setOffBrightness(arg.toInt()); });
+
         ARG(HTTP_REQUEST_FPANEL_POWER,              [&]() { FPanel::Instance().togglePower(); });
         ARG(HTTP_REQUEST_FPANEL_ACKNOWLEDGE,        [&]() { FPanel::Instance().toggleAcknowledge(); });
         // clang-format on
