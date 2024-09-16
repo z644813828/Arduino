@@ -6,6 +6,8 @@
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 
+// #define TIME_CLIENT_ENABLED
+
 #define HTTP_REQUEST_COLOR "color"
 #define HTTP_REQUEST_EFFECT "effect"
 #define HTTP_REQUEST_BRIGHTNESS "brightness"
@@ -41,8 +43,10 @@ class Wifi {
 
     bool m_wifiStatus = false;
     ESP8266WebServer m_server;
+#ifdef TIME_CLIENT_ENABLED
     WiFiUDP m_ntpUDP;
     NTPClient m_timeClient;
     const long m_utcOffsetInSeconds = 3600;
+#endif
 };
 #endif

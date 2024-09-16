@@ -4,14 +4,15 @@
 #include <Arduino.h>
 
 struct Status {
-    bool shown;
-    String text;
-    bool status;
+    String type;
+    bool shown = true;
+    String text = "";
+    bool status = true;
 
     uint8_t x;
     uint8_t y;
-    const uint8_t *img;
-    const uint8_t *img_full;
+    const uint8_t *img = NULL;
+    const uint8_t *img_full = NULL;
     uint8_t width;
     uint8_t height;
 };

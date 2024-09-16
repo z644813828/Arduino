@@ -5,10 +5,10 @@
 #include "display.h"
 #include "soil_wetness.h"
 
+static SoilWetness soil_wetness;
 SoilWetness &SoilWetness::Instance()
 {
-    static SoilWetness instance;
-    return instance;
+    return soil_wetness;
 }
 
 void SoilWetness::loop()

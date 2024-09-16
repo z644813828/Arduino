@@ -6,15 +6,22 @@
 #include "motion.h"
 #include "wifi.h"
 
+static volatile bool gpio_motion_handler_val = false;
+static void ICACHE_RAM_ATTR gpio_motion_handler()
+{
+    gpio_motion_handler_val = true;
+}
+
+static Motion motion;
 Motion &Motion::Instance()
 {
-    static Motion instance;
-    return instance;
+    return motion;
 }
 
 void Motion::setup()
 {
-    pinMode(GPIO_MOTION_PIN, INPUT);
+    pinMode(GPIO_MOTION_PIN, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(GPIO_MOTION_PIN), gpio_motion_handler, RISING);
     m_time = millis();
 }
 
@@ -45,7 +52,8 @@ void Motion::loop()
         return !((time <= m_time_start) && (time >= m_time_stop));
     };
 
-    if (digitalRead(GPIO_MOTION_PIN) == HIGH) {
+    if (gpio_motion_handler_val) {
+        gpio_motion_handler_val = false;
         m_time = millis() + (m_timeout * 1000);
 
         if (!is_time_allowed())

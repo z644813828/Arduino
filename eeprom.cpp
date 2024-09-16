@@ -1,8 +1,8 @@
 #include <EEPROM.h>
 
-#include "fpanel.h"
 #include "display.h"
 #include "eeprom.h"
+#include "fpanel.h"
 #include "led.h"
 #include "motion.h"
 #include "soil_wetness.h"
@@ -37,6 +37,7 @@ void Eeprom::load()
     Motion::Instance().setTimeStart(data.motion_time_start);
     Motion::Instance().setTimeStop(data.motion_time_stop);
     Motion::Instance().setTimeStop(data.motion_time_stop);
+
     FPanel::Instance().setPowerTimeout(data.fpanel_power_timeout);
     FPanel::Instance().setAcknowledgeTimeout(data.fpanel_acknowledge_timeout);
 }

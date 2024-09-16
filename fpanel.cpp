@@ -18,10 +18,10 @@ static void ICACHE_RAM_ATTR gpio_acknowledge_handler()
     gpio_acknowledge_handler_val = true;
 }
 
+static FPanel fpanel;
 FPanel &FPanel::Instance()
 {
-    static FPanel instance;
-    return instance;
+    return fpanel;
 }
 
 void FPanel::setup()
@@ -37,28 +37,16 @@ void FPanel::setup()
     attachInterrupt(digitalPinToInterrupt(GPIO_ACKNOWLEDGE_BUTTON_PIN), gpio_acknowledge_handler, RISING);
 }
 
-bool FPanel::checkTime(Button &btn)
-{
-    unsigned long time = millis();
-    if ((time - btn.last_time) < 1000)
-        return false;
-
-    btn.last_time = time;
-    return true;
-}
-
 void FPanel::loop()
 {
     if (gpio_power_handler_val) {
         gpio_power_handler_val = false;
-        if (checkTime(m_power))
-            togglePower();
+        togglePower();
     }
 
     if (gpio_acknowledge_handler_val) {
         gpio_acknowledge_handler_val = false;
-        if (checkTime(m_acknowledge))
-            toggleAcknowledge();
+        toggleAcknowledge();
     }
 
     unsigned long time = Wifi::Instance().getEpochTime();
@@ -74,39 +62,55 @@ void FPanel::loop()
 
     m_next_update_time += 200;
 
-    m_led_power_state = !m_led_power_state;
-
-    if (m_error_code = 0)
-        m_led_error_state = 0;
-    else
+    if (m_error_code == 0) {
+        m_led_power_state = true;
+        m_led_error_state = false;
+    } else {
+        m_led_power_state = !m_led_power_state;
         m_led_error_state = !m_led_error_state;
+    }
 
     digitalWrite(GPIO_POWER_LED_PIN, m_led_power_state);
     digitalWrite(GPIO_ERROR_LED_PIN, m_led_error_state);
 }
 
-static int toggle(int val, unsigned long timeout)
-{
-    return (val == 0)                                             // time expired or was never set
-               ? (Wifi::Instance().getEpochTime() + timeout * 60) // set new timeout
-               : 0;                                               // remove handler
-}
-
 void FPanel::togglePower()
 {
-    Serial.println(__func__);
-
-    m_power.val = toggle(m_power.val, m_power.timeout);
+    if (!m_power.clicked())
+        return;
 
     Led::Instance().setForceOff(m_power.val != 0);
     Display::Instance().setForceOff(m_power.val != 0);
+
+    Serial.print(__func__);
+    Serial.print(": ");
+    Serial.println(m_power.val);
 }
 
 void FPanel::toggleAcknowledge()
 {
-    Serial.println(__func__);
-
-    m_acknowledge.val = toggle(m_acknowledge.val, m_acknowledge.timeout);
+    if (!m_acknowledge.clicked())
+        return;
 
     Led::Instance().setSilenceError(m_acknowledge.val != 0);
+
+    Serial.print(__func__);
+    Serial.print(": ");
+    Serial.println(m_acknowledge.val);
+}
+
+bool Button::clicked()
+{
+    unsigned long time = millis();
+    if ((time - last_time) < 10000)
+        return false;
+
+    last_time = time;
+
+    if (val != 0) { // time expired or was never set
+        val = 0;    // remove handler
+        return true;
+    }
+    val = Wifi::Instance().getEpochTime() + timeout * 60; // set new timeout
+    return true;
 }

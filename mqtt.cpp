@@ -1,5 +1,5 @@
-#include "fpanel.h"
 #include "display.h"
+#include "fpanel.h"
 #include "led.h"
 #include "mqtt.h"
 
@@ -8,10 +8,10 @@ Mqtt::Mqtt()
 {
 }
 
+static Mqtt mqtt;
 Mqtt &Mqtt::Instance()
 {
-    static Mqtt instance;
-    return instance;
+    return mqtt;
 }
 
 static std::map<String, String> m_data;
@@ -33,8 +33,9 @@ void Mqtt::callback(char *topic, byte *payload, unsigned int length)
     m_data.insert(std::pair<String, String>(str_topic, str_payload));
 
     Serial.print(topic);
-    Serial.print("  ");
-    Serial.println(str_payload);
+    Serial.print(":  '");
+    Serial.print(str_payload);
+    Serial.println("'");
 
     if (str_topic == MQTT_MONIT_TEXT_TOPIC) {
         Display::Instance().setMonitText(str_payload);

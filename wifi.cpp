@@ -9,16 +9,20 @@
 
 #include "secrets.h"
 
+#define UTC_OFFSET 3
+
 Wifi::Wifi()
     : m_server(80)
+#ifdef TIME_CLIENT_ENABLED
     , m_timeClient(m_ntpUDP, "pool.ntp.org", m_utcOffsetInSeconds)
+#endif
 {
 }
 
+static Wifi wifi;
 Wifi &Wifi::Instance()
 {
-    static Wifi instance;
-    return instance;
+    return wifi;
 }
 
 void Wifi::setup()
@@ -151,7 +155,9 @@ void Wifi::loop()
             Serial.println(WiFi.localIP());
             InitHandler();
             m_server.begin();
+#ifdef TIME_CLIENT_ENABLED
             m_timeClient.begin();
+#endif
         } else {
             Serial.println("WiFi Disconnected");
         }
@@ -161,7 +167,9 @@ void Wifi::loop()
     Display::Instance().setWifiConnected(m_wifiStatus);
 
     m_server.handleClient();
+#ifdef TIME_CLIENT_ENABLED
     m_timeClient.update();
+#endif
 }
 
 int Wifi::getTime()
@@ -169,10 +177,18 @@ int Wifi::getTime()
     if (!m_wifiStatus)
         return -1;
 
-    return (m_timeClient.getHours() + 3) * 60 + m_timeClient.getMinutes();
+#ifdef TIME_CLIENT_ENABLED
+    return (m_timeClient.getHours() + UTC_OFFSET) * 60 + m_timeClient.getMinutes();
+#else
+    return 0;
+#endif
 }
 
 unsigned long Wifi::getEpochTime()
 {
+#ifdef TIME_CLIENT_ENABLED
     return m_timeClient.getEpochTime();
+#else
+    return 0;
+#endif
 }

@@ -1,12 +1,16 @@
 #ifndef FPANEL_H
 #define FPANEL_H
 
+#include "wifi.h"
+
 #include <Arduino.h>
 
 struct Button {
     int val = 0;
     int timeout = 10;
     unsigned long last_time = 0;
+
+    bool clicked();
 };
 
 class FPanel {
@@ -34,8 +38,6 @@ class FPanel {
     void toggleAcknowledge();
 
   private:
-    bool checkTime(Button &btn);
-
     Button m_power;
     Button m_acknowledge;
 

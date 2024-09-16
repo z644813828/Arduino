@@ -17,15 +17,8 @@ Display::Display()
 {
     m_next_update_time = millis();
 
-    memset(&m_monit, 0, sizeof(Status));
-    memset(&m_wifi, 0, sizeof(Status));
-    memset(&m_mqtt, 0, sizeof(Status));
-    memset(&m_soil_wetness, 0, sizeof(Status));
-    memset(&m_power, 0, sizeof(Status));
-    memset(&m_logo34, 0, sizeof(Status));
-    memset(&m_logo68, 0, sizeof(Status));
-
     // top navbar
+    m_wifi.type = "m_wifi";
     m_wifi.x = 0;
     m_wifi.y = 2;
     m_wifi.img = Signal816;
@@ -33,6 +26,7 @@ Display::Display()
     m_wifi.width = 16;
     m_wifi.height = 8;
 
+    m_mqtt.type = "m_mqtt";
     m_mqtt.x = 32;
     m_mqtt.y = 2;
     m_mqtt.img = Server88;
@@ -40,6 +34,8 @@ Display::Display()
     m_mqtt.width = 8;
     m_mqtt.height = 8;
 
+    m_monit.type = "m_monit";
+    m_monit.status = true;
     m_monit.x = 52;
     m_monit.y = 2;
     m_monit.img = Msg816;
@@ -47,6 +43,7 @@ Display::Display()
     m_monit.width = 16;
     m_monit.height = 8;
 
+    m_soil_wetness.type = "m_soil_wetness";
     m_soil_wetness.x = 88;
     m_soil_wetness.y = 2;
     m_soil_wetness.img = Leeve88;
@@ -54,6 +51,7 @@ Display::Display()
     m_soil_wetness.width = 8;
     m_soil_wetness.height = 8;
 
+    m_power.type = "m_power";
     m_power.status = true;
     m_power.x = 112;
     m_power.y = 2;
@@ -70,16 +68,16 @@ Display::Display()
     m_logo68.height = 34;
 
     m_logo34.x = (DISPLAY_WIDTH - 34) / 2;
-    m_logo68.y = 16;
+    m_logo34.y = 16;
     m_logo34.img = Rog6834;
     m_logo34.width = 34;
     m_logo34.height = 34;
 }
 
+static Display display;
 Display &Display::Instance()
 {
-    static Display instance;
-    return instance;
+    return display;
 }
 
 void Display::setup()
@@ -121,15 +119,17 @@ void Display::setSoilWetness(bool b)
 void Display::render(Status &s)
 {
     if (s.status) {
-        m_display.drawBitmap(s.x, s.y, s.img, s.width, s.height, WHITE);
+        if (s.img)
+            m_display.drawBitmap(s.x, s.y, s.img, s.width, s.height, WHITE);
         return;
     }
 
     if (!m_logo_printed) {
         m_logo_printed = true;
         // convert (8*8 || 16*8) . (34*34 || 68*34)
-        Status &logo = s.width == 8 ? m_logo34 : m_logo68;
-        m_display.drawBitmap(logo.x, logo.y, s.img_full, logo.width, logo.height, WHITE);
+        Status logo = s.width == 8 ? m_logo34 : m_logo68;
+        if (s.img_full)
+            m_display.drawBitmap(logo.x, logo.y, s.img_full, logo.width, logo.height, WHITE);
     }
 
     if (!m_text_printed) {
@@ -149,7 +149,7 @@ void Display::render(Status &s)
         }
     }
 
-    if (s.shown)
+    if (s.shown && s.img)
         m_display.drawBitmap(s.x, s.y, s.img, s.width, s.height, WHITE);
     s.shown = !s.shown;
 }
@@ -158,6 +158,8 @@ void Display::loop()
 {
     if (millis() < m_next_update_time)
         return;
+
+    m_next_update_time += 200;
 
     if (m_force_off) {
         m_display.clearDisplay();
@@ -169,7 +171,6 @@ void Display::loop()
 
     changeBrightness(show ? m_on_brightness : m_off_brightness);
 
-    m_next_update_time += 200;
     m_display.clearDisplay();
     m_logo_printed = false;
     m_text_printed = false;
@@ -180,7 +181,7 @@ void Display::loop()
     render(m_soil_wetness);
     render(m_power);
 
-    if (!m_logo_printed)
+    if (!m_logo_printed && show)
         render(m_logo68);
 
     m_display.display();

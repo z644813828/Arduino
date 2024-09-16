@@ -7,14 +7,6 @@
 
 #include "config.h"
 
-// clang-format off
-#define DEBUG \
-    Serial.print(__func__); \
-    Serial.print(":"); \
-    Serial.println(__LINE__); \
-    delay(5000);
-// clang-format on
-
 class Led {
   public:
     static Led &Instance();
@@ -72,7 +64,6 @@ class Led {
     void FadeInOut();
     void Fire();
     void HalloweenEyes();
-    void NewKITT();
     void RainbowCycle();
     void TwinkleRandom();
     void RunningLights();
@@ -86,20 +77,26 @@ class Led {
     void fillColorMap();
     void fillEffectsMap();
 
+    void delay(int msec) { m_delay = msec + millis(); };
+    bool delay_is_finished() { return millis() > m_delay; };
+
     CRGB m_strip[LED_STRIP_LEDSNUM];
 
     int m_error_code = 0;
     bool m_silence_error = false;
     int m_brightness = 255;
-    bool m_enabled = true;
+    bool m_enabled = false;
     bool m_force_on = false;
     bool m_force_off = false;
     bool m_debug = false;
+    bool m_current_brightness;
+    int m_theme_state = 0;
+    int m_delay = 0;
 
     CRGB m_color = CRGB::Red;
     String m_color_str = "Red";
     String m_effect = "BouncingBalls";
-    String m_error_effect = "BouncingBalls";
+    String m_error_effect = "Strobe";
 
     std::map<String, CRGB> m_color_map;
     std::map<String, std::map<String, int>> m_effect_map;
